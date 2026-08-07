@@ -38,3 +38,12 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Ruflo / claude-flow local runtime state (not shared, may contain machine-specific data)
+.swarm/
+.claude-flow/data/
+.claude-flow/sessions/
+.claude-flow/logs/
+ruvector.db
+*.db-shm
+*.db-wal
