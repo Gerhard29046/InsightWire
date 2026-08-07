@@ -1,24 +1,32 @@
-import { motion } from 'framer-motion'
+import { Route, Routes } from 'react-router-dom'
+import { AppShell } from './components/layout/AppShell'
+import Dashboard from './routes/Dashboard'
+import EventsFeed from './routes/EventsFeed'
+import Calendar from './routes/Calendar'
+import Alerts from './routes/Alerts'
+import EntityExplorer from './routes/EntityExplorer'
+import TimelineBuilder from './routes/TimelineBuilder'
+import WorldMap from './routes/WorldMap'
+import Workspace from './routes/Workspace'
+import Assistant from './routes/Assistant'
+import Admin from './routes/Admin'
 
 function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="max-w-xl text-center space-y-4"
-      >
-        <p className="text-sm uppercase tracking-widest text-sky-400">
-          Newsroom Intelligence Platform
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight">InsightWire</h1>
-        <p className="text-slate-400">
-          Discover important stories before they become mainstream news.
-          Dashboard, timelines, calendars, and alerts are coming online next.
-        </p>
-      </motion.div>
-    </div>
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route index element={<Dashboard />} />
+        <Route path="feed" element={<EventsFeed />} />
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="alerts" element={<Alerts />} />
+        <Route path="entities" element={<EntityExplorer />} />
+        <Route path="timeline" element={<TimelineBuilder />} />
+        <Route path="map" element={<WorldMap />} />
+        <Route path="workspace" element={<Workspace />} />
+        <Route path="assistant" element={<Assistant />} />
+        <Route path="admin" element={<Admin />} />
+      </Route>
+    </Routes>
   )
 }
 
