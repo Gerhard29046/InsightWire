@@ -19,4 +19,17 @@ Early scaffolding. See [`docs/decisions/`](docs/decisions) for architectural dec
 
 ## Development
 
+```bash
+npm install
+npm run dev      # local dev server
+npm run build    # production build -> dist/
+```
+
 Project tooling and MCP server setup are documented in [`docs/decisions/0001-mcp-server-setup.md`](docs/decisions/0001-mcp-server-setup.md).
+
+## Deployment
+
+Cloudflare Pages, connected to `main` on this repo:
+
+- **Build command:** `npm run build`
+- **Build output directory:** `dist`
