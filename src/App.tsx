@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import Dashboard from './routes/Dashboard'
 import EventsFeed from './routes/EventsFeed'
+import EventDetail from './routes/EventDetail'
 import Calendar from './routes/Calendar'
 import Alerts from './routes/Alerts'
 import EntityExplorer from './routes/EntityExplorer'
@@ -17,6 +18,7 @@ function App() {
       <Route element={<AppShell />}>
         <Route index element={<Dashboard />} />
         <Route path="feed" element={<EventsFeed />} />
+        <Route path="feed/:id" element={<EventDetail />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="alerts" element={<Alerts />} />
         <Route path="entities" element={<EntityExplorer />} />

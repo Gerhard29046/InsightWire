@@ -15,3 +15,42 @@ body,
 body {
   @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
 }
+
+/*
+ * Data-encoding tokens (category identity + severity status).
+ * Values come from the validated dataviz reference palette — fixed slot
+ * order is the colorblind-safety mechanism, do not reorder or reassign
+ * without re-running the palette validator.
+ */
+:root {
+  --cat-government: #2a78d6;
+  --cat-business: #eb6834;
+  --cat-courts: #1baf7a;
+  --cat-markets: #eda100;
+  --cat-elections: #e87ba4;
+  --cat-weather: #008300;
+  --cat-conflicts: #4a3aa7;
+  --cat-science: #e34948;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+}
+
+.dark {
+  --cat-government: #3987e5;
+  --cat-business: #d95926;
+  --cat-courts: #199e70;
+  --cat-markets: #c98500;
+  --cat-elections: #d55181;
+  --cat-weather: #008300;
+  --cat-conflicts: #9085e9;
+  --cat-science: #e66767;
+
+  /* Status steps are fixed across modes — already validated at 3:1+ on the dark surface. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+}
