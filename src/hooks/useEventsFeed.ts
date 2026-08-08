@@ -17,7 +17,11 @@ export interface UseEventsFeedResult {
 /** Fallback for "realtime updates" until Supabase Realtime is wired up. */
 const POLL_INTERVAL_MS = 60_000
 
-export function useEventsFeed(filters: EventFiltersState, sort: EventSortMode): UseEventsFeedResult {
+export function useEventsFeed(
+  filters: EventFiltersState,
+  sort: EventSortMode,
+  pageSize?: number,
+): UseEventsFeedResult {
   const [events, setEvents] = useState<NormalizedEvent[]>([])
   const [status, setStatus] = useState<FeedStatus>('loading')
   const [error, setError] = useState<unknown>(null)
@@ -31,7 +35,7 @@ export function useEventsFeed(filters: EventFiltersState, sort: EventSortMode): 
       setStatus(mode === 'append' ? 'loading-more' : 'loading')
       if (mode === 'replace') setError(null)
 
-      fetchEvents({ filters, sort, cursor: mode === 'append' ? cursorRef.current : null })
+      fetchEvents({ filters, sort, cursor: mode === 'append' ? cursorRef.current : null, pageSize })
         .then((res) => {
           if (requestId !== requestIdRef.current) return
           setEvents((prev) => (mode === 'append' ? [...prev, ...res.events] : res.events))
@@ -46,16 +50,16 @@ export function useEventsFeed(filters: EventFiltersState, sort: EventSortMode): 
           setStatus(err instanceof ApiNotConfiguredError ? 'not-configured' : 'error')
         })
     },
-    [filters, sort, events.length],
+    [filters, sort, pageSize, events.length],
   )
 
   useEffect(() => {
     cursorRef.current = null
     load('replace')
-    // Refetching should only be driven by filters/sort changing, not by
-    // `load`'s own identity (it changes every render via `events.length`).
+    // Refetching should only be driven by filters/sort/pageSize changing,
+    // not by `load`'s own identity (it changes every render via `events.length`).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sort])
+  }, [filters, sort, pageSize])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -63,7 +67,7 @@ export function useEventsFeed(filters: EventFiltersState, sort: EventSortMode): 
     }, POLL_INTERVAL_MS)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sort])
+  }, [filters, sort, pageSize])
 
   return {
     events,

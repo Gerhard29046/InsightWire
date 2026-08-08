@@ -99,5 +99,7 @@ export function createDefaultTrustRegistry(): TrustRegistry {
   registry.setProfile('zimbabwe-zbc', { category: 'government' })
   registry.setProfile('sanews', { category: 'government' })
   registry.setProfile('sanews-features', { category: 'government' })
+  registry.setProfile('south-africa-gov-events', { category: 'government' })
+  registry.setProfile('south-africa-presidency-events', { category: 'government' })
   return registry
 }

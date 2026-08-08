@@ -58,6 +58,7 @@ function fetchEventsViaApi({ filters, sort, cursor, pageSize = 25 }: FetchEvents
   filters.importance.forEach((v) => params.append('importance', v))
   filters.languages.forEach((v) => params.append('language', v))
   filters.sources.forEach((v) => params.append('source', v))
+  filters.statuses.forEach((v) => params.append('status', v))
 
   return apiFetch<FetchEventsResult>(`/events?${params.toString()}`)
 }

@@ -4,9 +4,12 @@ import { PlugZap, RefreshCw, Rss } from 'lucide-react'
 interface EmptyStateProps {
   variant: 'no-events' | 'not-configured'
   onRefresh?: () => void
+  /** Overrides the default "no-events" copy — used by pages (e.g. Calendar) whose truthful empty state reads differently than the Feed's. Ignored for "not-configured". */
+  title?: string
+  description?: string
 }
 
-export function EmptyState({ variant, onRefresh }: EmptyStateProps) {
+export function EmptyState({ variant, onRefresh, title, description }: EmptyStateProps) {
   const isNotConfigured = variant === 'not-configured'
   return (
     <motion.div
@@ -23,12 +26,12 @@ export function EmptyState({ variant, onRefresh }: EmptyStateProps) {
         )}
       </div>
       <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-        {isNotConfigured ? 'Backend not connected yet' : 'No live events are currently available.'}
+        {isNotConfigured ? 'Backend not connected yet' : (title ?? 'No live events are currently available.')}
       </h2>
       <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
         {isNotConfigured
           ? 'Set VITE_API_BASE_URL (see .env.example) once the ingestion API is live to start streaming real events here.'
-          : "The ingestion pipeline hasn't surfaced anything matching these filters yet."}
+          : (description ?? "The ingestion pipeline hasn't surfaced anything matching these filters yet.")}
       </p>
       {!isNotConfigured && onRefresh && (
         <button

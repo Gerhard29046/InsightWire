@@ -124,6 +124,16 @@ describe('parseListEventsQuery', () => {
     expect(query.minConfidence).toBe(0.5)
     expect(query.cities).toEqual(['Austin'])
   })
+
+  it('parses repeated status params (the calendar\'s scheduled-only filter)', () => {
+    const params = new URLSearchParams()
+    params.append('status', 'scheduled')
+    params.set('sort', 'upcoming')
+
+    const query = parseListEventsQuery(params)
+    expect(query.statuses).toEqual(['scheduled'])
+    expect(query.sort).toBe('upcoming')
+  })
 })
 
 describe('listEvents', () => {
@@ -178,6 +188,22 @@ describe('listEvents', () => {
     vi.mocked(createClient).mockReturnValue(client as never)
 
     await expect(listEvents(config, {})).rejects.toThrow(/network error/)
+  })
+
+  it('applies statuses as a status.in() filter, for the calendar\'s scheduled-only view', async () => {
+    const { client, chain } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEvents(config, { statuses: ['scheduled'] })
+    expect(chain.in).toHaveBeenCalledWith('status', ['scheduled'])
+  })
+
+  it('sorts by start_time ascending for the "upcoming" sort mode, nulls last', async () => {
+    const { client, chain } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEvents(config, { sort: 'upcoming' })
+    expect(chain.order).toHaveBeenCalledWith('start_time', { ascending: true, nullsFirst: false })
   })
 
   it('does not apply any filter for region (documented no-op)', async () => {

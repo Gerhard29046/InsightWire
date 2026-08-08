@@ -8,6 +8,8 @@ import { SouthAfricaGovConnector } from './connectors/sources/southAfricaGov'
 import { NamibiaNewEraConnector } from './connectors/sources/namibiaNewEra'
 import { ZimbabweZbcConnector } from './connectors/sources/zimbabweZbc'
 import { SAnewsConnector, SAnewsFeaturesConnector } from './connectors/sources/sanews'
+import { SouthAfricaGovEventsConnector } from './connectors/sources/southAfricaGovEvents'
+import { SouthAfricaPresidencyEventsConnector } from './connectors/sources/southAfricaPresidencyEvents'
 import { ConnectorManager } from './manager/ConnectorManager'
 import type { ConnectorManagerOptions } from './manager/ConnectorManager'
 
@@ -30,6 +32,8 @@ export { SouthAfricaGovConnector } from './connectors/sources/southAfricaGov'
 export { NamibiaNewEraConnector } from './connectors/sources/namibiaNewEra'
 export { ZimbabweZbcConnector } from './connectors/sources/zimbabweZbc'
 export { SAnewsConnector, SAnewsFeaturesConnector } from './connectors/sources/sanews'
+export { SouthAfricaGovEventsConnector } from './connectors/sources/southAfricaGovEvents'
+export { SouthAfricaPresidencyEventsConnector } from './connectors/sources/southAfricaPresidencyEvents'
 
 export { ConnectorManager } from './manager/ConnectorManager'
 export type { ConnectorManagerOptions } from './manager/ConnectorManager'
@@ -101,6 +105,8 @@ export function createDefaultRegistry(): ConnectorRegistry {
   registry.register(new ZimbabweZbcConnector())
   registry.register(new SAnewsConnector())
   registry.register(new SAnewsFeaturesConnector())
+  registry.register(new SouthAfricaGovEventsConnector())
+  registry.register(new SouthAfricaPresidencyEventsConnector())
   return registry
 }
 

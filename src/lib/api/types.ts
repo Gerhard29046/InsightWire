@@ -1,5 +1,6 @@
 import type { CategoryId } from '../categories'
 import type { Severity } from '../severity'
+import type { EventStatusId } from '@insightwire/shared'
 
 /**
  * The canonical event contract lives in @insightwire/shared (used by the
@@ -8,7 +9,7 @@ import type { Severity } from '../severity'
  */
 export type { NormalizedEvent, EventUpdate, EventStatusId, VerificationStatus } from '@insightwire/shared'
 
-export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated'
+export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated' | 'upcoming'
 export type EventTimeRange = 'any' | '1h' | '24h' | '7d' | '30d'
 
 export interface EventFiltersState {
@@ -19,6 +20,7 @@ export interface EventFiltersState {
   importance: Severity[]
   languages: string[]
   sources: string[]
+  statuses: EventStatusId[]
   verifiedOnly: boolean
   futureOnly: boolean
   liveOnly: boolean
@@ -36,6 +38,7 @@ export function createEmptyFilters(): EventFiltersState {
     importance: [],
     languages: [],
     sources: [],
+    statuses: [],
     verifiedOnly: false,
     futureOnly: false,
     liveOnly: false,
@@ -54,6 +57,7 @@ export function hasActiveFilters(filters: EventFiltersState): boolean {
     filters.importance.length > 0 ||
     filters.languages.length > 0 ||
     filters.sources.length > 0 ||
+    filters.statuses.length > 0 ||
     filters.verifiedOnly ||
     filters.futureOnly ||
     filters.liveOnly ||

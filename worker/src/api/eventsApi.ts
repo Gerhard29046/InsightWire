@@ -26,7 +26,7 @@ function client({ url, serviceRoleKey }: EventsApiConfig): SupabaseClient {
 const SELECT_COLUMNS =
   'id, title, description, summary, country, city, lat, lng, category, source, source_url, start_time, end_time, published_at, updated_at, importance, confidence, verification_status, language, people, organizations, keywords, tags, status, source_trust_score, priority_score'
 
-export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated'
+export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated' | 'upcoming'
 
 /**
  * "Breaking/emerging" has no dedicated column — defined here as
@@ -45,6 +45,7 @@ export interface ListEventsQuery {
   importance?: string[]
   languages?: string[]
   sources?: string[]
+  statuses?: string[]
   verifiedOnly?: boolean
   liveOnly?: boolean
   futureOnly?: boolean
@@ -79,6 +80,7 @@ export function parseListEventsQuery(searchParams: URLSearchParams): ListEventsQ
     importance: searchParams.getAll('importance'),
     languages: searchParams.getAll('language'),
     sources: searchParams.getAll('source'),
+    statuses: searchParams.getAll('status'),
     verifiedOnly: searchParams.get('verified') === 'true',
     liveOnly: searchParams.get('live') === 'true',
     futureOnly: searchParams.get('future') === 'true',
@@ -105,6 +107,9 @@ function sortColumn(sort: EventSortMode = 'latest'): { column: string; ascending
       return { column: 'confidence', ascending: false }
     case 'recently-updated':
       return { column: 'updated_at', ascending: false }
+    // Calendar's natural order: soonest scheduled event first, not most recently published.
+    case 'upcoming':
+      return { column: 'start_time', ascending: true }
     case 'latest':
     default:
       return { column: 'published_at', ascending: false }
@@ -141,6 +146,7 @@ export async function listEvents(config: EventsApiConfig, query: ListEventsQuery
   if (query.importance?.length) q = q.in('importance', query.importance)
   if (query.languages?.length) q = q.in('language', query.languages)
   if (query.sources?.length) q = q.in('source', query.sources)
+  if (query.statuses?.length) q = q.in('status', query.statuses)
   if (query.verifiedOnly) q = q.eq('verification_status', 'verified')
   if (query.liveOnly) q = q.eq('status', 'live')
   if (query.futureOnly) q = q.gt('start_time', new Date().toISOString())
