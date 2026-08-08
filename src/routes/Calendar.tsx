@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, Globe2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { categories, categoryById, type CategoryId } from '../lib/categories'
@@ -44,6 +45,7 @@ function formatEventDay(iso: string): string {
 
 export default function Calendar() {
   const today = new Date()
+  const navigate = useNavigate()
   const [monthCursor, setMonthCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [activeCategories, setActiveCategories] = useState<Set<CategoryId>>(new Set())
@@ -59,8 +61,19 @@ export default function Calendar() {
     })
   }
 
+  // `[...activeCategories]` produces a brand-new array on every render even
+  // when the Set's contents haven't changed. Passed unmemoized, that broke
+  // useCalendarEvents' own useMemo (its `categories` dependency never
+  // stayed referentially equal), which produced a new `filters` object on
+  // every render, which re-triggered useEventsFeed's fetch effect on every
+  // render — a perpetual refetch loop that never settled on 'ready'
+  // (visible as the page endlessly flickering between loading and empty,
+  // never actually showing data). Memoizing here, keyed on the Set itself,
+  // fixes it: this only produces a new array when a category is actually toggled.
+  const categoryList = useMemo(() => [...activeCategories], [activeCategories])
+
   const { events, status, error, refresh } = useCalendarEvents({
-    categories: [...activeCategories],
+    categories: categoryList,
     countries,
     search,
   })
@@ -285,8 +298,19 @@ export default function Calendar() {
               <ul className="flex flex-col gap-3">
                 {agendaEvents.map((e) => {
                   const cat = categoryById[e.category]
+                  const detailPath = `/feed/${encodeURIComponent(e.id)}`
+                  const openDetail = () => navigate(detailPath)
                   return (
-                    <li key={e.id} className="flex items-start gap-2.5">
+                    <li
+                      key={e.id}
+                      role="link"
+                      tabIndex={0}
+                      onClick={openDetail}
+                      onKeyDown={(ev) => {
+                        if (ev.key === 'Enter') openDetail()
+                      }}
+                      className="flex cursor-pointer items-start gap-2.5 rounded-lg p-1.5 -m-1.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    >
                       <span
                         className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
                         style={{ backgroundColor: `color-mix(in srgb, var(${cat.colorVar}) 16%, transparent)` }}
@@ -318,6 +342,7 @@ export default function Calendar() {
                               href={e.sourceUrl}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={(ev) => ev.stopPropagation()}
                               className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline dark:text-sky-400"
                             >
                               View official source
