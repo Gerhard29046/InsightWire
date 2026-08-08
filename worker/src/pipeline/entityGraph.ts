@@ -1,27 +1,36 @@
 /**
  * The relationship layer — deliberately separate from `Repository`
- * ("store relationships independently from events"). Narrower than it
- * looks: only `country`/`city` (from `event.country`/`.city`) and `topic`
- * (from `event.tags`) have a real data source today without live AI —
- * `person`/`organization`/`company`/`government_body` all depend on real
- * entity extraction (`NullAiProvider` returns empty arrays). The graph and
- * its dedup logic are fully built now; they simply have nothing to connect
- * for those four types until a real AI provider is configured.
+ * ("store relationships independently from events"). `country`/`location`
+ * (from `event.country`/`.city`), `topic` (from `event.tags`), and now the
+ * reporting source's own organization (from `event.source` + the trust
+ * registry's category — see processMessage.ts's `populateEntityGraph`) all
+ * have a real data source today without live AI. `person`/`organization`
+ * (as *mentioned-in-content* entities, distinct from the source org) still
+ * depend on real entity extraction (`NullAiProvider` returns empty arrays
+ * for `event.people`/`.organizations` — see pipeline/ai/enrichmentPipeline.ts).
+ * The graph and its dedup logic are fully built now; they simply have
+ * nothing to connect for content-mentioned people/orgs until a real AI
+ * provider is configured for ingestion-time enrichment.
  *
- * Also narrower than Phase 6's Postgres schema (docs/decisions/0004-database-schema.md),
- * which has `organizations`/`people` + event-join-tables but no generic
- * entity/relationship table spanning all 8 types — extending that schema
- * to match is future work, not assumed to already exist.
+ * Entity Explorer (Phase 11, supabase/migrations/20260808070000_entity_graph.sql)
+ * persists this graph's real-world node types (everything except `event`,
+ * which stays a pseudo-entity here — see `SupabaseEntityGraphStore` in
+ * `supabaseEntityGraphStore.ts`, which never writes an `event`-typed row,
+ * only the `entity_event_links` edge to the real `normalized_events` row).
  */
 export type EntityType =
   | 'person'
   | 'organization'
-  | 'country'
-  | 'city'
+  | 'government'
   | 'company'
-  | 'government_body'
+  | 'agency'
+  | 'country'
+  | 'location'
+  | 'political_party'
+  | 'international_organization'
   | 'event'
   | 'topic'
+  | 'other'
 
 export interface Entity {
   id: string
@@ -30,7 +39,14 @@ export interface Entity {
   createdAt: string
 }
 
-export type RelationshipType = 'mentions' | 'occurred_in' | 'tagged_with' | 'affiliated_with' | 'located_in' | 'part_of'
+export type RelationshipType =
+  | 'mentions'
+  | 'occurred_in'
+  | 'tagged_with'
+  | 'reported_by'
+  | 'affiliated_with'
+  | 'located_in'
+  | 'part_of'
 
 export interface Relationship {
   id: string
@@ -48,7 +64,8 @@ export interface EntityGraphStore {
   getRelationships(entityId: string): Promise<Relationship[]>
 }
 
-function normalizeName(name: string): string {
+/** The dedup key's name-normalization — exported so `SupabaseEntityGraphStore` applies the exact same rule (trim/lowercase/collapse whitespace), not a reimplementation that could drift. */
+export function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 

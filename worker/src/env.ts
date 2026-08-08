@@ -1,5 +1,7 @@
 import type { RawEvent } from './connectors/types'
+import { InMemoryEntityGraphStore, type EntityGraphStore } from './pipeline/entityGraph'
 import { InMemoryRepository, type Repository } from './pipeline/repository'
+import { SupabaseEntityGraphStore } from './pipeline/supabaseEntityGraphStore'
 import { SupabaseRepository } from './pipeline/supabaseRepository'
 
 /**
@@ -30,4 +32,19 @@ export function selectRepository(env: Pick<Env, 'SUPABASE_URL' | 'SUPABASE_SERVI
     return new SupabaseRepository({ url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY })
   }
   return new InMemoryRepository()
+}
+
+/**
+ * Same "not configured -> honest in-memory default" pattern as
+ * `selectRepository`, and the same reason to select fresh per batch rather
+ * than at module scope: `env` isn't available until a handler runs. Without
+ * Supabase configured, this is the exact same `InMemoryEntityGraphStore`
+ * every phase before Phase 11 used — local `wrangler dev` behavior is
+ * unchanged.
+ */
+export function selectEntityGraphStore(env: Pick<Env, 'SUPABASE_URL' | 'SUPABASE_SERVICE_ROLE_KEY'>): EntityGraphStore {
+  if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+    return new SupabaseEntityGraphStore({ url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY })
+  }
+  return new InMemoryEntityGraphStore()
 }

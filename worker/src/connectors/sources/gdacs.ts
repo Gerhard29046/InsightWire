@@ -1,9 +1,23 @@
-import { NormalizedEventSchema, type NormalizedEvent, type Coordinates } from '@insightwire/shared'
+import { NormalizedEventSchema, type NormalizedEvent, type Coordinates, type Severity } from '@insightwire/shared'
 import { RssConnector, parsePubDate, type RssItem } from '../base/RssConnector'
 import type { RawEvent, ValidationResult } from '../types'
 
 const UNSCORED_IMPORTANCE = 'medium' as const
 const UNSCORED_CONFIDENCE = 0.4
+
+/**
+ * GDACS's own public alert-level scale (gdacs.org/Knowledge/AlertLevels) —
+ * Green/Orange/Red, assigned by GDACS itself from real modeled impact data,
+ * not a keyword guess. This is the fix for "routine vs. significant" weather
+ * noise: every GDACS event previously landed at the same hardcoded 'medium'
+ * regardless of whether it was a green minor-flood notice or a red
+ * major-cyclone alert.
+ */
+const GDACS_ALERTLEVEL_TO_IMPORTANCE: Record<string, Severity> = {
+  Red: 'critical',
+  Orange: 'high',
+  Green: 'low',
+}
 
 interface GdacsItem extends RssItem {
   'dc:subject'?: string
@@ -11,6 +25,11 @@ interface GdacsItem extends RssItem {
     'geo:lat'?: number
     'geo:long'?: number
   }
+  /** Real, structured, single-value fields GDACS provides on every item — verified against the real feed (see __fixtures__/gdacs.xml, e.g. `<gdacs:country>Japan</gdacs:country>`). Previously ignored in favor of a hardcoded 'Global', with a comment deferring "real" country extraction to free-text parsing of the description — this structured field was simply never noticed. */
+  'gdacs:country'?: string
+  'gdacs:iso3'?: string
+  /** GDACS's own Green/Orange/Red alert level for this item — see GDACS_ALERTLEVEL_TO_IMPORTANCE. */
+  'gdacs:alertlevel'?: string
 }
 
 export class GdacsConnector extends RssConnector {
@@ -40,10 +59,15 @@ export class GdacsConnector extends RssConnector {
       id: `${this.id}:${raw.externalId}`,
       title: String(item.title ?? 'Untitled GDACS alert').trim(),
       description: String(item.description ?? '').trim(),
-      // GDACS alerts routinely name several affected countries in free text
-      // (e.g. "affects these countries: Japan") — extracting those reliably
-      // is Phase 5 entity-extraction work, not a connector's job.
-      country: 'Global',
+      // Real, structured field GDACS provides on every item (`<gdacs:country>Japan</gdacs:country>`)
+      // — a single authoritative country per alert, not a free-text guess.
+      // A real bug this fixes: this field was previously ignored entirely in
+      // favor of a hardcoded 'Global', which made every GDACS event
+      // invisible to real country/region filtering (e.g. a real "flood alert
+      // in Sri Lanka" showed up under every region because it reported no
+      // country at all). Falls back to 'Global' only when GDACS genuinely
+      // doesn't supply one (rare, but real — not every alert names a single country).
+      country: item['gdacs:country']?.trim() || 'Global',
       coordinates,
       category: 'weather',
       source: this.name,
@@ -51,7 +75,15 @@ export class GdacsConnector extends RssConnector {
       publishedAt,
       updatedAt: publishedAt,
       confirmingSources: [{ connectorId: this.id, sourceUrl, reportedAt: publishedAt }],
-      importance: UNSCORED_IMPORTANCE,
+      // `gdacs:alertlevel` is GDACS's own real severity classification (see
+      // GDACS_ALERTLEVEL_TO_IMPORTANCE above). Deliberately NOT deriving
+      // `confidence` from `gdacs:alertscore` (the numeric score behind the
+      // level) — that score measures potential humanitarian *impact
+      // magnitude*, not GDACS's certainty that the report itself is
+      // accurate. Treating a bigger disaster as "more certain" would be a
+      // fabricated correlation, so confidence stays at the same honest
+      // unscored default GDACS always had.
+      importance: (item['gdacs:alertlevel'] ? GDACS_ALERTLEVEL_TO_IMPORTANCE[item['gdacs:alertlevel']] : undefined) ?? UNSCORED_IMPORTANCE,
       confidence: UNSCORED_CONFIDENCE,
       verificationStatus: 'unverified',
       language: 'en',

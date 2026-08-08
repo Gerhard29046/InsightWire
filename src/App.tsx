@@ -6,8 +6,10 @@ import EventDetail from './routes/EventDetail'
 import Calendar from './routes/Calendar'
 import Alerts from './routes/Alerts'
 import EntityExplorer from './routes/EntityExplorer'
+import EntityDetail from './routes/EntityDetail'
 import TimelineBuilder from './routes/TimelineBuilder'
 import WorldMap from './routes/WorldMap'
+import HistoryDetail from './routes/HistoryDetail'
 import Workspace from './routes/Workspace'
 import Assistant from './routes/Assistant'
 import Admin from './routes/Admin'
@@ -22,8 +24,10 @@ function App() {
         <Route path="calendar" element={<Calendar />} />
         <Route path="alerts" element={<Alerts />} />
         <Route path="entities" element={<EntityExplorer />} />
+        <Route path="entities/:id" element={<EntityDetail />} />
         <Route path="timeline" element={<TimelineBuilder />} />
         <Route path="map" element={<WorldMap />} />
+        <Route path="history/:id" element={<HistoryDetail />} />
         <Route path="workspace" element={<Workspace />} />
         <Route path="assistant" element={<Assistant />} />
         <Route path="admin" element={<Admin />} />

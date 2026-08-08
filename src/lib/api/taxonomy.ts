@@ -16,7 +16,9 @@ export const regions = [
   'Middle East',
   'Africa',
   'Asia-Pacific',
-]
+] as const
+
+export type RegionLabel = (typeof regions)[number]
 
 export interface LanguageOption {
   code: string

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiNotConfiguredError } from '../lib/api/client'
 import { fetchDashboardSummary, type DashboardSummary } from '../lib/api/dashboard'
+import type { RegionLabel } from '@insightwire/shared'
 
 export type DashboardStatus = 'loading' | 'ready' | 'error' | 'not-configured'
 
@@ -21,17 +22,20 @@ export interface UseDashboardSummaryResult {
  */
 const POLL_INTERVAL_MS = 60_000
 
-export function useDashboardSummary(): UseDashboardSummaryResult {
+export function useDashboardSummary(regions: RegionLabel[] = []): UseDashboardSummaryResult {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [status, setStatus] = useState<DashboardStatus>('loading')
   const [error, setError] = useState<unknown>(null)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null)
   const requestIdRef = useRef(0)
+  // Array identity changes every render for an inline literal like `[]` —
+  // keying on the joined value keeps the effect from refetching every render.
+  const regionsKey = regions.join(',')
 
   const load = useCallback(() => {
     const requestId = ++requestIdRef.current
     setStatus('loading')
-    fetchDashboardSummary()
+    fetchDashboardSummary(regions)
       .then((res) => {
         if (requestId !== requestIdRef.current) return
         setSummary(res)
@@ -44,7 +48,8 @@ export function useDashboardSummary(): UseDashboardSummaryResult {
         setError(err)
         setStatus(err instanceof ApiNotConfiguredError ? 'not-configured' : 'error')
       })
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionsKey])
 
   useEffect(() => {
     load()

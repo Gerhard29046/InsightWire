@@ -17,6 +17,7 @@ function makeChain(result: QueryResult) {
     select: vi.fn(() => chain),
     neq: vi.fn(() => chain),
     gte: vi.fn(() => chain),
+    in: vi.fn(() => chain),
     order: vi.fn(() => chain),
     limit: vi.fn(() => chain),
     then: (onFulfilled: (v: QueryResult) => unknown, onRejected?: (e: unknown) => unknown) =>
@@ -220,6 +221,70 @@ describe('getDashboardSummary', () => {
     const generatedMs = new Date(summary.generatedAt).getTime()
     expect(generatedMs).toBeGreaterThanOrEqual(before)
     expect(generatedMs).toBeLessThanOrEqual(Date.now())
+  })
+
+  it('zero-fills every real region, including ones with no events this window', async () => {
+    const diversityRows = [
+      diversityRow('South Africa', 'south-africa-gov', 'government'),
+      diversityRow('South Africa', 'south-africa-gov', 'government'),
+      diversityRow('Japan', 'gdacs-alerts', 'weather'),
+    ]
+    const { client } = makeSequencedClient([
+      { data: null, error: null, count: 0 },
+      { data: null, error: null, count: 0 },
+      { data: diversityRows, error: null },
+      { data: [], error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    const summary = await getDashboardSummary(config)
+    expect(summary.regionBreakdown).toContainEqual({ region: 'Africa', count: 2 })
+    expect(summary.regionBreakdown).toContainEqual({ region: 'Asia-Pacific', count: 1 })
+    expect(summary.regionBreakdown).toContainEqual({ region: 'Europe', count: 0 })
+  })
+
+  it('a real country with no mapped region (e.g. an unrecognized value) falls back to the Global bucket rather than being dropped', async () => {
+    const diversityRows = [diversityRow('Global', 'nasa-news', 'science')]
+    const { client } = makeSequencedClient([
+      { data: null, error: null, count: 0 },
+      { data: null, error: null, count: 0 },
+      { data: diversityRows, error: null },
+      { data: [], error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    const summary = await getDashboardSummary(config)
+    expect(summary.regionBreakdown).toContainEqual({ region: 'Global', count: 1 })
+  })
+
+  it('applies a real country filter to all 4 queries when the caller (a region selection translated to countries) provides one', async () => {
+    const { client, chains } = makeSequencedClient([
+      { data: null, error: null, count: 0 },
+      { data: null, error: null, count: 0 },
+      { data: [], error: null },
+      { data: [], error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await getDashboardSummary(config, undefined, ['South Africa', 'Nigeria'])
+    for (const chain of chains) {
+      expect(chain.in).toHaveBeenCalledWith('country', ['South Africa', 'Nigeria'])
+    }
+  })
+
+  it('does not call .in() at all when no countries are provided (no restriction)', async () => {
+    const { client, chains } = makeSequencedClient([
+      { data: null, error: null, count: 0 },
+      { data: null, error: null, count: 0 },
+      { data: [], error: null },
+      { data: [], error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await getDashboardSummary(config)
+    for (const chain of chains) {
+      expect(chain.in).not.toHaveBeenCalled()
+    }
   })
 
   it('throws (rather than silently returning a partial summary) when any query errors', async () => {

@@ -57,4 +57,34 @@ describe('NwsConnector', () => {
     const event = connector.normalize(realRaw)
     expect(event.sourceUrl).toMatch(/^https:\/\/api\.weather\.gov/)
   })
+
+  it('always treats a Tornado Warning as critical, even when cap:severity is only Moderate', () => {
+    const event = connector.normalize({
+      connectorId: connector.id,
+      externalId: 'tornado-1',
+      fetchedAt: new Date().toISOString(),
+      payload: { title: 'Tornado Warning', 'cap:event': 'Tornado Warning', 'cap:severity': 'Moderate', link: { '@_href': 'https://api.weather.gov/x' } },
+    })
+    expect(event.importance).toBe('critical')
+  })
+
+  it('always caps a Special Weather Statement at low, even when cap:severity is Severe', () => {
+    const event = connector.normalize({
+      connectorId: connector.id,
+      externalId: 'sws-1',
+      fetchedAt: new Date().toISOString(),
+      payload: { title: 'Special Weather Statement', 'cap:event': 'Special Weather Statement', 'cap:severity': 'Severe', link: { '@_href': 'https://api.weather.gov/x' } },
+    })
+    expect(event.importance).toBe('low')
+  })
+
+  it('leaves cap:severity-based importance untouched for product types on neither override list', () => {
+    const event = connector.normalize({
+      connectorId: connector.id,
+      externalId: 'flood-watch-1',
+      fetchedAt: new Date().toISOString(),
+      payload: { title: 'Flood Watch', 'cap:event': 'Flood Watch', 'cap:severity': 'Severe', link: { '@_href': 'https://api.weather.gov/x' } },
+    })
+    expect(event.importance).toBe('high')
+  })
 })

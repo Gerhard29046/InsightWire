@@ -58,4 +58,48 @@ describe('GdacsConnector', () => {
     expect(event.coordinates).toBeUndefined()
     expect(connector.validate(event).valid).toBe(true)
   })
+
+  it('extracts the real per-event country from the feed\'s structured gdacs:country field, not a hardcoded "Global"', () => {
+    const rawEvents = parseRssItems(connector.id, fixtureXml)
+    const countries = rawEvents.map((raw) => connector.normalize(raw).country)
+    // The real fixture (mirroring the live GDACS feed) has three distinct real countries, not one "Global" bucket for everything.
+    expect(countries).toEqual(['Japan', 'Spain', 'Australia'])
+  })
+
+  it('falls back to "Global" only when the feed genuinely supplies no gdacs:country', () => {
+    const rawEvent = {
+      connectorId: connector.id,
+      externalId: 'no-country',
+      fetchedAt: new Date().toISOString(),
+      payload: { title: 'Alert without a named country', description: 'desc', link: 'https://gdacs.org/x', guid: { '#text': 'X2' } },
+    }
+    const event = connector.normalize(rawEvent)
+    expect(event.country).toBe('Global')
+  })
+
+  it('maps the real gdacs:alertlevel to importance instead of a flat hardcoded "medium"', () => {
+    const base = { title: 'Alert', description: 'desc', link: 'https://gdacs.org/x' }
+    const red = connector.normalize({ connectorId: connector.id, externalId: 'red', fetchedAt: new Date().toISOString(), payload: { ...base, guid: { '#text': 'R1' }, 'gdacs:alertlevel': 'Red' } })
+    const orange = connector.normalize({ connectorId: connector.id, externalId: 'orange', fetchedAt: new Date().toISOString(), payload: { ...base, guid: { '#text': 'O1' }, 'gdacs:alertlevel': 'Orange' } })
+    const green = connector.normalize({ connectorId: connector.id, externalId: 'green', fetchedAt: new Date().toISOString(), payload: { ...base, guid: { '#text': 'G1' }, 'gdacs:alertlevel': 'Green' } })
+    expect(red.importance).toBe('critical')
+    expect(orange.importance).toBe('high')
+    expect(green.importance).toBe('low')
+  })
+
+  it('falls back to "medium" importance only when the feed genuinely supplies no alertlevel', () => {
+    const event = connector.normalize({
+      connectorId: connector.id,
+      externalId: 'no-level',
+      fetchedAt: new Date().toISOString(),
+      payload: { title: 'Alert without a level', description: 'desc', link: 'https://gdacs.org/x', guid: { '#text': 'X3' } },
+    })
+    expect(event.importance).toBe('medium')
+  })
+
+  it('the real fixture items carry their real Green alertlevel through to a "low" importance, not the old flat "medium"', () => {
+    const rawEvents = parseRssItems(connector.id, fixtureXml)
+    const importanceValues = rawEvents.map((raw) => connector.normalize(raw).importance)
+    expect(importanceValues).toEqual(['low', 'low', 'low'])
+  })
 })

@@ -87,11 +87,55 @@ export {
   DEFAULT_PRIORITY_WEIGHTS,
 } from './pipeline/priority'
 export type { AiImpactScores, CategoryImpactDefaults, PriorityInputs, PriorityWeights } from './pipeline/priority'
-export { InMemoryEntityGraphStore } from './pipeline/entityGraph'
-export type { Entity, EntityGraphStore, EntityType, Relationship, RelationshipType } from './pipeline/entityGraph'
 export { mergeEvents } from './pipeline/mergeEngine'
 export type { MergeInputs, MergeResult } from './pipeline/mergeEngine'
 export { getTimeline, recordTimelineEntries, recordTimelineEntry } from './pipeline/timeline'
+
+export { InMemoryEntityGraphStore, normalizeName } from './pipeline/entityGraph'
+export type { Entity, EntityGraphStore, EntityType, Relationship, RelationshipType } from './pipeline/entityGraph'
+export { SupabaseEntityGraphStore } from './pipeline/supabaseEntityGraphStore'
+export type { SupabaseEntityGraphStoreConfig } from './pipeline/supabaseEntityGraphStore'
+export { getEntityDetail, listEntities, parseListEntitiesQuery } from './api/entitiesApi'
+export type {
+  ConnectedEntity,
+  EntitiesApiConfig,
+  EntityCount,
+  EntityDetail,
+  EntityRecord,
+  ListEntitiesQuery,
+  ListEntitiesResult,
+  RelationshipEvidence,
+} from './api/entitiesApi'
+
+export { GeminiEntityBriefProvider, PROMPT_VERSION as ENTITY_BRIEF_PROMPT_VERSION } from './pipeline/ai/entityBriefProvider'
+export type {
+  CitedStatement,
+  EntityBrief,
+  EntityBriefEvidenceEvent,
+  EntityBriefEvidenceRelationship,
+  EntityBriefInput,
+  EntityBriefProvider,
+} from './pipeline/ai/entityBriefProvider'
+
+export { GeminiEntityExtractionProvider, PROMPT_VERSION as ENTITY_EXTRACTION_PROMPT_VERSION } from './pipeline/ai/entityExtractionProvider'
+export type {
+  EntityExtractionInput,
+  EntityExtractionProvider,
+  EntityExtractionResult,
+  EntityRelationshipType,
+  ExtractedEntityCandidate,
+  ExtractedRelationshipCandidate,
+} from './pipeline/ai/entityExtractionProvider'
+export {
+  CONFIDENCE_THRESHOLD as ENTITY_EXTRACTION_CONFIDENCE_THRESHOLD,
+  DEFAULT_EXTRACTION_BATCH_SIZE,
+  evidenceAppearsInSource,
+  extractEntitiesForEvent,
+  hasCurrentExtraction,
+  runEntityExtractionBatch,
+  selectEventsNeedingExtraction,
+} from './pipeline/entityExtraction'
+export type { EntityExtractionBatchSummary, EntityExtractionConfig, ExtractEntitiesForEventResult } from './pipeline/entityExtraction'
 
 export function createDefaultRegistry(): ConnectorRegistry {
   const registry = new ConnectorRegistry()

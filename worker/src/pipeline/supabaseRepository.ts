@@ -85,6 +85,17 @@ export interface ConfirmingSourceRow {
 }
 
 /**
+ * Co-located with `NormalizedEventRow`/`fromNormalizedEventRow` (the "how to
+ * read a normalized_events row" concern) so both the read API layer
+ * (eventsApi.ts, which re-exports this for backward compatibility —
+ * dashboardApi.ts/entitiesApi.ts already import it from there) and the
+ * pipeline layer (entityExtraction.ts) can use the same column list without
+ * either duplicating it or reaching upward from pipeline into api.
+ */
+export const SELECT_COLUMNS =
+  'id, title, description, summary, country, city, lat, lng, category, source, source_url, start_time, end_time, published_at, updated_at, importance, confidence, verification_status, language, people, organizations, keywords, tags, status, source_trust_score, priority_score'
+
+/**
  * `raw_event_id` is always left null here: `Repository.upsertRawEvent`
  * returns `Promise<void>` (no id), and `NormalizedEvent` has no field
  * carrying its source raw_events row either — linking them would need an
