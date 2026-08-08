@@ -17,16 +17,46 @@ export interface PriorityWeights {
   categoryWeight: number
 }
 
+/**
+ * Rebalanced from the original weights (sourceTrust .2, confirmingSources
+ * .15, freshness .15, aiConfidence .1, geographicImpact .1, politicalImpact
+ * .1, economicImpact .1, disasterSeverity .05, categoryWeight .05) to fix a
+ * real, confirmed problem: `disasterSeverity` — the *only* signal that can
+ * tell a routine weather alert apart from a major one — had the smallest
+ * weight in the whole formula, while a static, category-wide
+ * `geographicImpact` default (0.9 for every weather event, severe or not)
+ * and a flat `categoryWeight` bonus (weather always scored high regardless
+ * of severity) dominated instead. A fresh, trusted-source, routine
+ * thunderstorm alert could already score ~45-50/100 before severity was
+ * even factored in.
+ *
+ * `disasterSeverity`: .05 -> .20 (now the largest single weight after
+ * sourceTrust, so a real Red/critical event and a real Green/low event are
+ * clearly distinguishable in the final score).
+ * `geographicImpact`: .10 -> .05 (this is a static per-category default,
+ * not a per-event signal — it shouldn't outweigh a real per-event severity
+ * reading).
+ * `economicImpact`: .10 -> .05 (same reasoning — weather's economic-impact
+ * default is a category-wide guess, not real per-event data).
+ * `categoryWeight`: .05 -> .00 (a fixed "this category always matters"
+ * bonus is exactly what let every weather event score similarly regardless
+ * of real severity; removed rather than shrunk, since disasterSeverity now
+ * covers that job for weather and every other category still has zero
+ * real events today — see docs/decisions/0006-intelligence-quality.md).
+ * Non-weather categories are only mildly affected (computeDisasterSeverity
+ * returns 0 for them, same as before — see its own doc comment).
+ * Weights still sum to exactly 1.0.
+ */
 export const DEFAULT_PRIORITY_WEIGHTS: PriorityWeights = {
   sourceTrust: 0.2,
   confirmingSources: 0.15,
   freshness: 0.15,
   aiConfidence: 0.1,
-  geographicImpact: 0.1,
+  geographicImpact: 0.05,
   politicalImpact: 0.1,
-  economicImpact: 0.1,
-  disasterSeverity: 0.05,
-  categoryWeight: 0.05,
+  economicImpact: 0.05,
+  disasterSeverity: 0.2,
+  categoryWeight: 0.0,
 }
 
 export interface CategoryImpactDefaults {

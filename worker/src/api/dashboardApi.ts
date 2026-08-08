@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { CATEGORY_IDS, type CategoryId, type NormalizedEvent } from '@insightwire/shared'
+import { CATEGORY_IDS, REGION_LABELS, regionForCountry, type CategoryId, type NormalizedEvent, type RegionLabel } from '@insightwire/shared'
 import { fromNormalizedEventRow, type NormalizedEventRow } from '../pipeline/supabaseRepository'
 import { BREAKING_PRIORITY_THRESHOLD, SELECT_COLUMNS } from './eventsApi'
 
@@ -21,12 +21,28 @@ export interface CategoryCount {
   count: number
 }
 
+export interface RegionCount {
+  region: RegionLabel
+  count: number
+}
+
 export interface DashboardSummary {
   eventsTracked24h: number
   highPriorityAlerts24h: number
   countriesReporting: number
   sourcesReporting: number
   categoryBreakdown: CategoryCount[]
+  /**
+   * Real per-region counts derived from the same window's real `country`
+   * values (via the shared, factual REGION_COUNTRIES mapping) — not a
+   * separate query. "Global" here means "events whose real country doesn't
+   * map to any of the 6 named regions" (e.g. NASA/WHO/UN-style events with
+   * no single country), not a padding bucket. Regions with zero real events
+   * this window are still included at 0 (same reasoning as categoryBreakdown)
+   * so the frontend can honestly render "no events" rather than omitting
+   * a region silently.
+   */
+  regionBreakdown: RegionCount[]
   highestSignalEvents: NormalizedEvent[]
   /** Real wall-clock time this summary was computed — the frontend's "Updated Xs ago" is derived from this, never a fabricated/optimistic timestamp. */
   generatedAt: string
@@ -60,26 +76,39 @@ interface DiversityRow {
 export async function getDashboardSummary(
   config: DashboardApiConfig,
   windowHours: number = DEFAULT_WINDOW_HOURS,
+  /** Real country names (already translated from a region selection by the caller — same pattern as listEvents) to scope every number in this summary to. Empty/undefined means no restriction. */
+  countries?: string[],
 ): Promise<DashboardSummary> {
   const supabase = client(config)
   const since = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString()
 
+  const applyCountryFilter = <T>(q: T): T =>
+    countries && countries.length > 0 ? ((q as any).in('country', countries) as T) : q
+
   const [tracked, highPriority, diversity, top] = await Promise.all([
-    supabase.from('normalized_events').select('*', { count: 'exact', head: true }).neq('status', 'scheduled').gte('published_at', since),
-    supabase
-      .from('normalized_events')
-      .select('*', { count: 'exact', head: true })
-      .neq('status', 'scheduled')
-      .gte('published_at', since)
-      .gte('priority_score', BREAKING_PRIORITY_THRESHOLD),
-    supabase.from('normalized_events').select('country, source, category').neq('status', 'scheduled').gte('published_at', since),
-    supabase
-      .from('normalized_events')
-      .select(SELECT_COLUMNS)
-      .neq('status', 'scheduled')
-      .gte('published_at', since)
-      .order('priority_score', { ascending: false, nullsFirst: false })
-      .limit(HIGHEST_SIGNAL_LIMIT),
+    applyCountryFilter(
+      supabase.from('normalized_events').select('*', { count: 'exact', head: true }).neq('status', 'scheduled').gte('published_at', since),
+    ),
+    applyCountryFilter(
+      supabase
+        .from('normalized_events')
+        .select('*', { count: 'exact', head: true })
+        .neq('status', 'scheduled')
+        .gte('published_at', since)
+        .gte('priority_score', BREAKING_PRIORITY_THRESHOLD),
+    ),
+    applyCountryFilter(
+      supabase.from('normalized_events').select('country, source, category').neq('status', 'scheduled').gte('published_at', since),
+    ),
+    applyCountryFilter(
+      supabase
+        .from('normalized_events')
+        .select(SELECT_COLUMNS)
+        .neq('status', 'scheduled')
+        .gte('published_at', since)
+        .order('priority_score', { ascending: false, nullsFirst: false })
+        .limit(HIGHEST_SIGNAL_LIMIT),
+    ),
   ])
 
   if (tracked.error) throw new Error(`getDashboardSummary(eventsTracked24h) failed: ${tracked.error.message}`)
@@ -101,6 +130,15 @@ export async function getDashboardSummary(
   }
   const categoryBreakdown: CategoryCount[] = CATEGORY_IDS.map((category) => ({ category, count: counts.get(category) ?? 0 }))
 
+  // Same reasoning as categoryBreakdown: every real region starts at 0 so a
+  // region with no events this window is an honest 0, not a silent omission.
+  const regionCounts = new Map<RegionLabel, number>(REGION_LABELS.map((r) => [r, 0]))
+  for (const row of diversityRows) {
+    const region = regionForCountry(row.country)
+    regionCounts.set(region, (regionCounts.get(region) ?? 0) + 1)
+  }
+  const regionBreakdown: RegionCount[] = REGION_LABELS.map((region) => ({ region, count: regionCounts.get(region) ?? 0 }))
+
   const topRows = (top.data ?? []) as NormalizedEventRow[]
   const highestSignalEvents = topRows.map((row) => fromNormalizedEventRow(row, []))
 
@@ -110,6 +148,7 @@ export async function getDashboardSummary(
     countriesReporting,
     sourcesReporting,
     categoryBreakdown,
+    regionBreakdown,
     highestSignalEvents,
     generatedAt: new Date().toISOString(),
   }

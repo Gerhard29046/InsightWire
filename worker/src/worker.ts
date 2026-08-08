@@ -4,10 +4,10 @@ import type { RawEvent } from './connectors/types'
 import { handleApiRequest } from './api/router'
 import { selectAiProvider } from './pipeline/ai/enrichmentPipeline'
 import { InMemoryDuplicateIndex } from './pipeline/dedupe'
-import { InMemoryEntityGraphStore } from './pipeline/entityGraph'
+import { runEntityExtractionBatch } from './pipeline/entityExtraction'
 import { InMemoryPipelineMetrics } from './pipeline/metrics'
 import { processMessage } from './pipeline/processMessage'
-import { selectRepository, type Env } from './env'
+import { selectEntityGraphStore, selectRepository, type Env } from './env'
 import { createDefaultTrustRegistry } from './pipeline/trust'
 
 export type { Env } from './env'
@@ -16,21 +16,20 @@ export type { Env } from './env'
  * Module-level singletons: persist across invocations within the same
  * Worker isolate, which is what makes in-memory dedup/metrics useful at all
  * between one `scheduled()` tick and the `queue()` batches it produces.
- * `repository` is *not* one of these — env (and therefore which Repository
- * backs a run) is only available inside a handler, not at module scope — it's
- * selected fresh per `queue()` batch instead, same as `aiProvider` already
- * was. Creating a `SupabaseRepository` is cheap either way: it just wraps
- * `fetch` (PostgREST), there's no connection-pool lifecycle to manage across
- * invocations the way a raw TCP client would need.
- * Dedup/metrics/entity-graph stay in-memory this phase — this phase only
- * replaces the `Repository` implementation, per its own scope (see ADR 0007).
+ * `repository`/`entityGraphStore` are *not* among these — env (and therefore
+ * which backend implementation backs a run) is only available inside a
+ * handler, not at module scope — both are selected fresh per `queue()` batch
+ * instead, same as `aiProvider` already was. Creating either is cheap either
+ * way: both just wrap `fetch` (PostgREST), there's no connection-pool
+ * lifecycle to manage across invocations the way a raw TCP client would need.
+ * Dedup/metrics stay in-memory — nothing in this codebase has needed them
+ * durable yet.
  */
 const registry = createDefaultRegistry()
 const manager = new ConnectorManager(registry)
 const duplicateIndex = new InMemoryDuplicateIndex()
 const pipelineMetrics = new InMemoryPipelineMetrics()
 const trustRegistry = createDefaultTrustRegistry()
-const entityGraphStore = new InMemoryEntityGraphStore()
 
 export default {
   /**
@@ -80,6 +79,26 @@ export default {
         results: results.map((r) => ({ connectorId: r.connectorId, status: r.status, itemsCollected: r.itemsCollected })),
       }),
     )
+
+    /**
+     * Phase 12: the rate-limited entity-extraction batch — a handful of real
+     * events per tick (see DEFAULT_EXTRACTION_BATCH_SIZE), completely
+     * separate from connector collection above. `runEntityExtractionBatch`
+     * is a no-op when GEMINI_API_KEY or Supabase isn't configured, and
+     * isolates every failure internally — nothing it does can turn a
+     * successful collection tick into a failed one.
+     */
+    if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      const entityGraphStore = selectEntityGraphStore(env)
+      const extractionSummary = await runEntityExtractionBatch(
+        { url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY },
+        env.GEMINI_API_KEY,
+        entityGraphStore,
+      )
+      if (extractionSummary.eventsProcessed > 0) {
+        console.log(JSON.stringify({ level: 'info', event: 'entityExtraction.batch.complete', ...extractionSummary }))
+      }
+    }
   },
 
   /**
@@ -91,11 +110,12 @@ export default {
    */
   async queue(batch: MessageBatch<RawEvent>, env: Env, _ctx: ExecutionContext): Promise<void> {
     const aiProvider = selectAiProvider(env)
-    // Env (and therefore which Repository backs this run) is only available
-    // inside a handler, not at module scope — selected fresh per batch, same
-    // as aiProvider above. Creating a SupabaseRepository is cheap: it just
-    // wraps `fetch`, there's no persistent connection to pool across calls.
+    // Env (and therefore which Repository/EntityGraphStore backs this run) is
+    // only available inside a handler, not at module scope — both selected
+    // fresh per batch, same as aiProvider above. Creating either is cheap: they
+    // just wrap `fetch`, there's no persistent connection to pool across calls.
     const repository = selectRepository(env)
+    const entityGraphStore = selectEntityGraphStore(env)
 
     for (const message of batch.messages) {
       try {

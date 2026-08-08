@@ -1,8 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { NormalizedEvent } from '@insightwire/shared'
-import { fromNormalizedEventRow, type ConfirmingSourceRow, type NormalizedEventRow } from '../pipeline/supabaseRepository'
+import { fromNormalizedEventRow, SELECT_COLUMNS, type ConfirmingSourceRow, type NormalizedEventRow } from '../pipeline/supabaseRepository'
 import type { Repository } from '../pipeline/repository'
 import { getTimeline } from '../pipeline/timeline'
+
+/** Re-exported for backward compatibility — dashboardApi.ts/entitiesApi.ts import this from here; the real definition now lives in supabaseRepository.ts (see its own doc comment) so the pipeline layer can use it too without reaching into the api layer. */
+export { SELECT_COLUMNS }
 
 /**
  * The read side of the Intelligence API — deliberately separate from
@@ -22,10 +25,6 @@ export interface EventsApiConfig {
 function client({ url, serviceRoleKey }: EventsApiConfig): SupabaseClient {
   return createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 }
-
-/** Exported so dashboardApi.ts's own queries stay in sync with this schema automatically rather than re-typing the column list. */
-export const SELECT_COLUMNS =
-  'id, title, description, summary, country, city, lat, lng, category, source, source_url, start_time, end_time, published_at, updated_at, importance, confidence, verification_status, language, people, organizations, keywords, tags, status, source_trust_score, priority_score'
 
 export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated' | 'upcoming'
 
@@ -124,10 +123,15 @@ function timeRangeToFromDate(range: ListEventsQuery['timeRange']): string | null
 }
 
 /**
- * No filter is applied for "region" (a frontend-only geographic grouping —
- * NormalizedEvent has no region field and no country->region mapping table
- * exists) — an honest no-op, same gap already documented for the direct-
- * Supabase path this replaces (docs/decisions/0008-frontend-preview.md).
+ * No `region` param exists in `ListEventsQuery` at all — "region" (Africa,
+ * Middle East, etc.) is a frontend-only geographic grouping with no backend
+ * column to filter on (`NormalizedEvent` has no region field). An earlier
+ * version of the frontend sent a `?region=` param that this endpoint simply
+ * never read — a real, live bug (a region filter that looked active but
+ * matched everything). Fixed at the source: `src/lib/regions.ts` now
+ * translates a region selection into the real `countries` filter below
+ * *before* the request is ever sent, so this endpoint only ever needs to
+ * do real, exact country matching — never a fuzzy or partial concept.
  */
 export async function listEvents(config: EventsApiConfig, query: ListEventsQuery): Promise<ListEventsResult> {
   const supabase = client(config)

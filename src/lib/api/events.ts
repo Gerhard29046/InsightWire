@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import { countriesForRegions } from '../regions'
 import type { EventFiltersState, EventSortMode, EventUpdate, NormalizedEvent } from './types'
 
 export interface FetchEventsParams {
@@ -49,11 +50,26 @@ function fetchEventsViaApi({ filters, sort, cursor, pageSize = 25 }: FetchEvents
   if (filters.verifiedOnly) params.set('verified', 'true')
   if (filters.futureOnly) params.set('future', 'true')
   if (filters.liveOnly) params.set('live', 'true')
+  if (filters.breakingOnly) params.set('breaking', 'true')
   if (filters.dateFrom) params.set('from', filters.dateFrom)
   if (filters.dateTo) params.set('to', filters.dateTo)
   if (filters.timeRange !== 'any') params.set('timeRange', filters.timeRange)
-  filters.countries.forEach((v) => params.append('country', v))
-  filters.regions.forEach((v) => params.append('region', v))
+  // `region` (Africa/Middle East/etc.) is a UI-only grouping — the backend has
+  // no region column and never will (see eventsApi.ts's own doc comment).
+  // Translating it into the real, already-correct `country` filter here is
+  // what actually applies it; sending a `region` param the API silently
+  // ignored was the real cause of a region filter appearing "active" while
+  // doing nothing (e.g. selecting Africa still showing unrelated country
+  // events like a GDACS "Global"-filed alert with no region at all).
+  const regionCountries = countriesForRegions(filters.regions)
+  const isGlobalSelected = filters.regions.includes('Global')
+  if (!isGlobalSelected) {
+    const mergedCountries = new Set([...filters.countries, ...regionCountries])
+    mergedCountries.forEach((v) => params.append('country', v))
+  } else if (filters.countries.length > 0) {
+    // "Global" means "no region restriction," but an explicitly typed country still applies.
+    filters.countries.forEach((v) => params.append('country', v))
+  }
   filters.categories.forEach((v) => params.append('category', v))
   filters.importance.forEach((v) => params.append('importance', v))
   filters.languages.forEach((v) => params.append('language', v))

@@ -33,6 +33,40 @@ const CAP_CERTAINTY_TO_CONFIDENCE: Record<string, number> = {
   Unlikely: 0.25,
 }
 
+/**
+ * `cap:event` carries NWS's own official product-type name (a finite,
+ * government-defined vocabulary documented at
+ * https://www.weather.gov/lwx/warningsdefined) — a real classification NWS
+ * itself assigns, not a free-text keyword match. `cap:severity` is the
+ * primary signal and is generally right, but a small number of product
+ * types are always life-safety-critical (or always routine/informational)
+ * *by definition of the product itself*, regardless of the severity level
+ * NWS attached to a specific issuance. These two short, explicitly-named
+ * lists only ever move the score toward what the product type itself
+ * already means — every other product type is untouched and keeps the
+ * `cap:severity` mapping above exactly as before.
+ */
+const ALWAYS_CRITICAL_EVENT_TYPES = new Set([
+  'Tornado Warning',
+  'Tsunami Warning',
+  'Hurricane Warning',
+  'Extreme Wind Warning',
+  'Flash Flood Emergency',
+])
+
+const ALWAYS_LOW_EVENT_TYPES = new Set([
+  'Special Weather Statement',
+  'Beach Hazards Statement',
+  'Hazardous Weather Outlook',
+])
+
+function resolveImportance(baseImportance: Severity, eventType: string | undefined): Severity {
+  if (!eventType) return baseImportance
+  if (ALWAYS_CRITICAL_EVENT_TYPES.has(eventType)) return 'critical'
+  if (ALWAYS_LOW_EVENT_TYPES.has(eventType)) return 'low'
+  return baseImportance
+}
+
 export class NwsConnector extends RssConnector {
   constructor() {
     super({
@@ -84,7 +118,10 @@ export class NwsConnector extends RssConnector {
       publishedAt,
       updatedAt: publishedAt,
       confirmingSources: [{ connectorId: this.id, sourceUrl, reportedAt: publishedAt }],
-      importance: (severity ? CAP_SEVERITY_TO_IMPORTANCE[severity] : undefined) ?? UNSCORED_IMPORTANCE,
+      importance: resolveImportance(
+        (severity ? CAP_SEVERITY_TO_IMPORTANCE[severity] : undefined) ?? UNSCORED_IMPORTANCE,
+        entry['cap:event'],
+      ),
       confidence: (certainty ? CAP_CERTAINTY_TO_CONFIDENCE[certainty] : undefined) ?? UNSCORED_CONFIDENCE,
       verificationStatus: 'verified',
       language: 'en',

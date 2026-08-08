@@ -11,7 +11,8 @@ import type { PipelineMetrics } from './metrics'
 import { computePriorityScore } from './priority'
 import type { Repository } from './repository'
 import { recordTimelineEntries, recordTimelineEntry } from './timeline'
-import type { TrustRegistry } from './trust'
+import type { SourceCategory, TrustRegistry } from './trust'
+import type { EntityType } from './entityGraph'
 
 export interface ProcessMessageDeps {
   registry: ConnectorRegistry
@@ -36,12 +37,45 @@ function errorMessage(err: unknown): string {
 }
 
 /**
- * "Never duplicate entities" — only wires the 3 entity types that have a
- * real data source without live AI (country/city/topic; see
- * entityGraph.ts's own doc comment for why person/organization/company/
- * government_body stay unpopulated until real entity extraction exists).
+ * A source's trust category already tells us what *kind* of organization
+ * reported an event — official/international bodies (WHO, UN, GDACS) map to
+ * `international_organization`, national agencies (NASA, NWS) to `agency`,
+ * literal government publishers (SAnews, gov.za) to `government`. Reusing
+ * `trust.ts`'s existing, already-correct classification here means the
+ * reporting-organization entity's type is never a second, independently
+ * maintained guess — see docs/decisions (trust.ts's own doc comment) for why
+ * each connector has the category it has.
  */
-async function populateEntityGraph(entityGraphStore: EntityGraphStore, event: NormalizedEvent): Promise<void> {
+function sourceCategoryToEntityType(category: SourceCategory): EntityType {
+  switch (category) {
+    case 'official':
+      return 'international_organization'
+    case 'government':
+      return 'government'
+    case 'company':
+      return 'company'
+    case 'ngo':
+    case 'university':
+    case 'rss':
+    case 'community':
+      return 'organization'
+  }
+}
+
+/**
+ * "Never duplicate entities" — wires every entity type that has a real data
+ * source without live AI: country/location/topic (from the event itself),
+ * and now the reporting source's own organization (`event.source`, typed via
+ * the trust registry — see `sourceCategoryToEntityType` above). `person`/
+ * `organization` as *content-mentioned* entities stay unpopulated until real
+ * entity extraction exists (see entityGraph.ts's own doc comment for why).
+ */
+/** Exported for `worker/scripts/backfillEntities.ts` — the one-off backfill reuses this exact function (not a reimplementation) against every already-ingested real event, so newly-ingested and backfilled entities are computed identically. */
+export async function populateEntityGraph(
+  entityGraphStore: EntityGraphStore,
+  event: NormalizedEvent,
+  sourceCategory: SourceCategory,
+): Promise<void> {
   const eventEntity = await entityGraphStore.findOrCreateEntity('event', event.id)
 
   if (event.country && event.country !== 'Global') {
@@ -49,8 +83,8 @@ async function populateEntityGraph(entityGraphStore: EntityGraphStore, event: No
     await entityGraphStore.addRelationship(eventEntity.id, country.id, 'occurred_in')
   }
   if (event.city) {
-    const city = await entityGraphStore.findOrCreateEntity('city', event.city)
-    await entityGraphStore.addRelationship(eventEntity.id, city.id, 'occurred_in')
+    const location = await entityGraphStore.findOrCreateEntity('location', event.city)
+    await entityGraphStore.addRelationship(eventEntity.id, location.id, 'occurred_in')
   }
   for (const tag of event.tags) {
     const topic = await entityGraphStore.findOrCreateEntity('topic', tag)
@@ -63,6 +97,10 @@ async function populateEntityGraph(entityGraphStore: EntityGraphStore, event: No
   for (const orgName of event.organizations) {
     const org = await entityGraphStore.findOrCreateEntity('organization', orgName)
     await entityGraphStore.addRelationship(eventEntity.id, org.id, 'mentions')
+  }
+  if (event.source) {
+    const reportingOrg = await entityGraphStore.findOrCreateEntity(sourceCategoryToEntityType(sourceCategory), event.source)
+    await entityGraphStore.addRelationship(eventEntity.id, reportingOrg.id, 'reported_by')
   }
 }
 
@@ -185,7 +223,7 @@ export async function processMessage(raw: RawEvent, deps: ProcessMessageDeps): P
   const enrichment = await enrichEvent(candidate, deps.aiProvider)
   const aiLatencyMs = Date.now() - aiStartedAt
 
-  await populateEntityGraph(deps.entityGraphStore, enrichment.event)
+  await populateEntityGraph(deps.entityGraphStore, enrichment.event, trustProfile.category)
 
   const finalEvent: NormalizedEvent = {
     ...enrichment.event,

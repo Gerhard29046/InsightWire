@@ -13,9 +13,12 @@ interface EventFeedProps {
   hasMore: boolean
   onLoadMore: () => void
   onRetry: () => void
+  /** Real, filter-specific empty-state copy from the caller (which knows the active filters) — e.g. "No events found for: Region: Africa." Falls back to the generic message when absent. */
+  emptyTitle?: string
+  emptyDescription?: string
 }
 
-export function EventFeed({ events, status, error, hasMore, onLoadMore, onRetry }: EventFeedProps) {
+export function EventFeed({ events, status, error, hasMore, onLoadMore, onRetry, emptyTitle, emptyDescription }: EventFeedProps) {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -35,7 +38,7 @@ export function EventFeed({ events, status, error, hasMore, onLoadMore, onRetry 
   if (status === 'loading') return <LoadingSkeleton count={6} />
   if (status === 'not-configured') return <EmptyState variant="not-configured" />
   if (status === 'error') return <ErrorState error={error} onRetry={onRetry} />
-  if (status === 'empty') return <EmptyState variant="no-events" onRefresh={onRetry} />
+  if (status === 'empty') return <EmptyState variant="no-events" onRefresh={onRetry} title={emptyTitle} description={emptyDescription} />
 
   return (
     <div className="flex flex-col gap-3">

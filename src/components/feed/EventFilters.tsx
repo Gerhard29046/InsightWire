@@ -213,6 +213,15 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
           />
           Future events
         </label>
+        <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={filters.breakingOnly}
+            onChange={(e) => set('breakingOnly', e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
+          />
+          Breaking only
+        </label>
       </div>
     </div>
   )

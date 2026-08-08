@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { clsx } from 'clsx'
 import { AlertTriangle, Globe2, Radar, RefreshCw, Rss } from 'lucide-react'
 import { StatCard } from '../components/dashboard/StatCard'
 import { CategoryBreakdown } from '../components/dashboard/CategoryBreakdown'
+import { RegionBreakdown } from '../components/dashboard/RegionBreakdown'
+import { MapPlaceholderCard } from '../components/dashboard/MapPlaceholderCard'
+import { WorldTimeline } from '../components/dashboard/WorldTimeline'
 import { EventCard } from '../components/feed/EventCard'
 import { LoadingSkeleton } from '../components/feed/LoadingSkeleton'
 import { ErrorState } from '../components/feed/ErrorState'
 import { EmptyState } from '../components/feed/EmptyState'
 import { useDashboardSummary } from '../hooks/useDashboardSummary'
+import { regions } from '../lib/api/taxonomy'
+import type { RegionLabel } from '@insightwire/shared'
 
 /** Ticks once a second purely to re-render "Updated Xs ago" — the timestamp itself only ever changes on a real successful fetch (see useDashboardSummary's lastUpdatedAt). */
 function useClockTick(intervalMs: number): number {
@@ -28,8 +34,17 @@ function formatUpdatedAgo(lastUpdatedAt: Date | null): string {
   return `${minutes}m ago`
 }
 
+/** Builds a real /feed deep link that carries the current region quick-filter, matching EventsFeed.tsx's own `?region=` URL param (see its filtersFromSearchParams). */
+function feedLink(region: RegionLabel, extra?: Record<string, string>): string {
+  const params = new URLSearchParams(extra)
+  if (region !== 'Global') params.set('region', region)
+  const query = params.toString()
+  return `/feed${query ? `?${query}` : ''}`
+}
+
 export default function Dashboard() {
-  const { summary, status, error, lastUpdatedAt, refresh } = useDashboardSummary()
+  const [region, setRegion] = useState<RegionLabel>('Global')
+  const { summary, status, error, lastUpdatedAt, refresh } = useDashboardSummary(region === 'Global' ? [] : [region])
   useClockTick(1000) // forces a re-render every second so "Updated Xs ago" stays live without refetching
 
   return (
@@ -37,8 +52,8 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Dashboard</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Live signal across government, markets, courts, and beyond — a real aggregation of the
-          same Intelligence API that powers the Events Feed, not a separately calculated view.
+          What matters right now — a real aggregation of the same Intelligence API that powers the
+          Events Feed, not a separately calculated view.
         </p>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 dark:text-slate-500">
           <span>Window: last 24 hours</span>
@@ -50,6 +65,24 @@ export default function Dashboard() {
             Updated {formatUpdatedAgo(lastUpdatedAt)}
           </span>
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {regions.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRegion(r)}
+            className={clsx(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              region === r
+                ? 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300',
+            )}
+          >
+            {r}
+          </button>
+        ))}
       </div>
 
       {status === 'not-configured' && <EmptyState variant="not-configured" />}
@@ -71,22 +104,41 @@ export default function Dashboard() {
               variant="no-events"
               onRefresh={refresh}
               title="No live intelligence detected in the selected period."
-              description="No real events were tracked in the last 24 hours. This reflects the actual data — nothing is fabricated to fill the page."
+              description={
+                region === 'Global'
+                  ? 'No real events were tracked in the last 24 hours. This reflects the actual data — nothing is fabricated to fill the page.'
+                  : `No real events were tracked for ${region} in the last 24 hours. Try Global or another region.`
+              }
             />
           ) : (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard icon={Rss} label="Events tracked (24h)" value={String(summary.eventsTracked24h)} />
-                <StatCard icon={AlertTriangle} label="High-priority alerts (24h)" value={String(summary.highPriorityAlerts24h)} />
-                <StatCard icon={Radar} label="Countries reporting" value={String(summary.countriesReporting)} />
+                <StatCard
+                  icon={Rss}
+                  label="Events tracked (24h)"
+                  value={String(summary.eventsTracked24h)}
+                  to={feedLink(region)}
+                />
+                <StatCard
+                  icon={AlertTriangle}
+                  label="Breaking alerts (24h)"
+                  value={String(summary.highPriorityAlerts24h)}
+                  to={feedLink(region, { breaking: 'true' })}
+                />
+                <StatCard
+                  icon={Radar}
+                  label="Countries reporting"
+                  value={String(summary.countriesReporting)}
+                  to="/entities?type=country"
+                />
                 <StatCard icon={Globe2} label="Sources reporting" value={String(summary.sourcesReporting)} />
               </div>
 
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="flex flex-col gap-3 xl:col-span-2">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Highest-signal events</h2>
-                    <Link to="/feed" className="text-xs font-medium text-sky-500 hover:text-sky-600">
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Significant events</h2>
+                    <Link to={feedLink(region)} className="text-xs font-medium text-sky-500 hover:text-sky-600">
                       View full feed →
                     </Link>
                   </div>
@@ -103,12 +155,16 @@ export default function Dashboard() {
 
                 <div className="flex flex-col gap-6">
                   <CategoryBreakdown breakdown={summary.categoryBreakdown} />
+                  {region === 'Global' && <RegionBreakdown breakdown={summary.regionBreakdown} />}
+                  <MapPlaceholderCard />
                 </div>
               </div>
             </>
           )}
         </>
       )}
+
+      <WorldTimeline />
     </div>
   )
 }
