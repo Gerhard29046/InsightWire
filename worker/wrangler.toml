@@ -1,0 +1,28 @@
+name = "insightwire-worker"
+main = "src/worker.ts"
+compatibility_date = "2026-08-07"
+
+# Cron trigger — fires the collector (see scheduled() in src/worker.ts),
+# which fetches from due connectors and enqueues raw events. The tick
+# frequency here and each connector's own refreshIntervalMs
+# (worker/src/connectors/sources/*.ts) are independent by design —
+# ConnectorManager.collectDue() decides what's actually due each tick.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Phase 6.5 (Intelligence Engine) — collect -> queue -> normalize -> dedupe
+# -> AI enrich -> persist. See docs/decisions/0005-intelligence-engine.md.
+# Verified via `wrangler dev`'s local Queue simulation only — nothing here
+# has been deployed to a real Cloudflare account (Queues now work on the
+# Free plan too, correcting what ADR 0003 said; see that ADR's follow-up
+# note).
+[[queues.producers]]
+queue = "insightwire-raw-events"
+binding = "RAW_EVENTS_QUEUE"
+
+[[queues.consumers]]
+queue = "insightwire-raw-events"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+dead_letter_queue = "insightwire-raw-events-dlq"

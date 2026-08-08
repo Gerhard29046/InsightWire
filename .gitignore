@@ -14,6 +14,12 @@ build/
 .env.local
 .env.*.local
 
+# Wrangler local secrets (worker/.dev.vars holds SUPABASE_SERVICE_ROLE_KEY —
+# a real credential, never to be committed; wrangler's own convention also
+# uses .dev.vars.<environment> for per-environment overrides)
+.dev.vars
+.dev.vars.*
+
 # Logs
 *.log
 npm-debug.log*
@@ -47,3 +53,6 @@ venv/
 ruvector.db
 *.db-shm
 *.db-wal
+
+# /graphify skill output -- generated cache/graph artifacts, not source
+graphify-out/

@@ -13,7 +13,7 @@ export function Sidebar({ open, onNavigate }: SidebarProps) {
     <aside
       className={clsx(
         'fixed inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-slate-200 bg-white transition-transform duration-200 ease-out dark:border-slate-800 dark:bg-slate-950',
-        'lg:static lg:translate-x-0',
+        'lg:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full',
       )}
     >

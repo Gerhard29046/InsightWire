@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="https://news.un.org/en/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:yandex="http://news.yandex.ru" xmlns:media="http://search.yahoo.com/mrss/" xmlns:podcast="https://podcastindex.org/namespace/1.0">
+  <channel>
+    <title>UN News - Global perspective Human stories</title>
+    <link>https://news.un.org/en/</link>
+    <description>Global perspective Human stories</description>
+    <language>en</language>
+    <atom:link rel="self" href="https://news.un.org/feed/subscribe/en/news/all/rss.xml"></atom:link>
+    <image>
+      <url>https://news.un.org/en/themes/custom/un_base_theme/images/un-emblem-for-rss.png</url>
+      <title>UN News</title>
+      <link>https://news.un.org/en/</link>
+      <description>Global perspective Human stories</description>
+    </image>
+    <generator>United Nations</generator>
+    <lastBuildDate>Fri, 07 Aug 2026 11:23:46 -0400</lastBuildDate>
+    <pubDate>Fri, 07 Aug 2026 08:00:00 -0400</pubDate>
+    <item>
+      <title>Food prices edged up in July amid heatwaves and energy price hikes</title>
+      <link>https://news.un.org/feed/view/en/story/2026/08/1168096</link>
+      <description>The cost of key foods edged up last month as searing heatwaves and ongoing geopolitical uncertainty impacted energy prices around the world.</description>
+      <enclosure url="https://global.unitednations.entermediadb.net/assets/mediadb/services/module/asset/downloads/preset/Collections/Production%20Library/2026/08/07-08-2026-Brazil-sugarcane-Adobe.jpg/image560x340cropped.jpg" length="71178" type="image/jpeg"></enclosure>
+      <guid isPermaLink>https://news.un.org/en/story/2026/08/1168096</guid>
+      <pubDate>Fri, 07 Aug 2026 12:00:00 +0000</pubDate>
+      <source url="https://news.un.org/feed/subscribe/en/news/all/rss.xml">UN News - Global perspective Human stories</source>
+    </item>
+    <item>
+      <title>‘A clear violation’: Guterres deplores deadliest attack on Kyiv this year</title>
+      <link>https://news.un.org/feed/view/en/story/2026/08/1168095</link>
+      <description>UN Secretary-General&amp;nbsp;António Guterres condemned on Wednesday the deadliest Russian strikes on Kyiv this year, which killed 17 people and caused extensive damage to civilian infrastructure overnight.</description>
+      <enclosure url="https://global.unitednations.entermediadb.net/assets/mediadb/services/module/asset/downloads/preset/Collections/Embargoed/2026/08/03-08-2026-UNOCHA-Ukraine-01.jpg/image560x340cropped.jpg" length="64906" type="image/jpeg"></enclosure>
+      <guid isPermaLink>https://news.un.org/en/story/2026/08/1168095</guid>
+      <pubDate>Thu, 06 Aug 2026 12:00:00 +0000</pubDate>
+      <source url="https://news.un.org/feed/subscribe/en/news/all/rss.xml">UN News - Global perspective Human stories</source>
+    </item>
+    <item>
+      <title>Cuba: Independent experts condemn new US sanctions as humanitarian crisis deepens</title>
+      <link>https://news.un.org/feed/view/en/story/2026/08/1168094</link>
+      <description>Independent UN human rights experts on Thursday condemned a fresh round of US sanctions against Cuba, calling them an attempt to force change on “a sovereign State through threats and coercion.”</description>
+      <enclosure url="https://global.unitednations.entermediadb.net/assets/mediadb/services/module/asset/downloads/preset/assets/2017/09/27953/image560x340cropped.jpg" length="31054" type="image/jpeg"></enclosure>
+      <guid isPermaLink>https://news.un.org/en/story/2026/08/1168094</guid>
+      <pubDate>Thu, 06 Aug 2026 12:00:00 +0000</pubDate>
+      <source url="https://news.un.org/feed/subscribe/en/news/all/rss.xml">UN News - Global perspective Human stories</source>
+    </item>
+  </channel>
+</rss>
