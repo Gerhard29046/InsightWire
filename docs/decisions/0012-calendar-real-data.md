@@ -158,6 +158,38 @@ a month grid — the Feed's own call sites are unaffected.
   real `sourceUrl`s resolving to the actual gov.za/thepresidency.gov.za
   article pages, and `totalCount: 23`.
 
+## Correction: the Feed and the Calendar must never blend (found and fixed same day)
+
+The first pass of this phase shared `listEvents` between the Feed and the
+Calendar but only had the Calendar opt *in* to `status: 'scheduled'` — it
+never made the Feed opt *out*. That's a real bug, not just a style
+preference: `publishedAt` on a calendar event is set to *when the
+connector discovered it* (necessarily recent), not the event's own future
+date, so a newly-ingested "President addresses Parliament next month"
+would sort to the top of the Feed's "latest" view looking exactly like
+breaking news — precisely the confusion the Feed/Calendar distinction
+exists to prevent ("what's happening right now" vs. "what's scheduled to
+happen").
+
+Fixed at the single point of truth (`eventsApi.ts`'s `listEvents`):
+`status = 'scheduled'` rows are now excluded by default and only surface
+when a caller explicitly requests them via `statuses` — the Calendar's own
+query always does, every other caller (Feed, Dashboard) doesn't need to
+know this rule exists. Verified live: `GET /events?sort=latest` now
+returns zero `scheduled` rows against the real database that already has
+23 of them.
+
+The refresh cadence had the same latent bug: `Calendar.tsx` was calling
+the Feed's own `useEventsFeed` hook directly, inheriting its 60-second
+poll — appropriate for breaking news, wasteful and pointless for events
+that won't change for hours. Fixed by extracting a dedicated
+`useCalendarEvents` hook (`src/hooks/useCalendarEvents.ts`) that always
+requests `futureOnly`/`statuses: ['scheduled']`/`sort: 'upcoming'` and
+polls hourly — `useEventsFeed` gained an optional `pollIntervalMs`
+parameter (default unchanged at 60s) rather than a second hardcoded
+constant. This also makes the Feed/Calendar distinction explicit in the
+codebase, not just in each page's own inline filter object.
+
 ## Risks & assumptions carried forward
 
 - `south-africa-presidency-events`'s page-scan coverage is real but

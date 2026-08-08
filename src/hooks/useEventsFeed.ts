@@ -14,13 +14,20 @@ export interface UseEventsFeedResult {
   refresh: () => void
 }
 
-/** Fallback for "realtime updates" until Supabase Realtime is wired up. */
-const POLL_INTERVAL_MS = 60_000
+/**
+ * Fallback for "realtime updates" until Supabase Realtime is wired up.
+ * Default matches the Global Events Feed's "what's happening right now"
+ * cadence — callers with a different refresh model (e.g. the Calendar,
+ * which answers "what's scheduled" and has no reason to re-poll every
+ * minute) pass their own `pollIntervalMs`.
+ */
+const DEFAULT_POLL_INTERVAL_MS = 60_000
 
 export function useEventsFeed(
   filters: EventFiltersState,
   sort: EventSortMode,
   pageSize?: number,
+  pollIntervalMs: number = DEFAULT_POLL_INTERVAL_MS,
 ): UseEventsFeedResult {
   const [events, setEvents] = useState<NormalizedEvent[]>([])
   const [status, setStatus] = useState<FeedStatus>('loading')
@@ -64,10 +71,10 @@ export function useEventsFeed(
   useEffect(() => {
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') load('replace')
-    }, POLL_INTERVAL_MS)
+    }, pollIntervalMs)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, sort, pageSize])
+  }, [filters, sort, pageSize, pollIntervalMs])
 
   return {
     events,

@@ -198,6 +198,24 @@ describe('listEvents', () => {
     expect(chain.in).toHaveBeenCalledWith('status', ['scheduled'])
   })
 
+  it('excludes scheduled (calendar) events by default, so the Feed never shows future events as breaking news', async () => {
+    const { client, chain } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEvents(config, {})
+    expect(chain.neq).toHaveBeenCalledWith('status', 'scheduled')
+  })
+
+  it('does not exclude scheduled events when explicitly requested via statuses', async () => {
+    const { client, chain } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEvents(config, { statuses: ['scheduled'] })
+    for (const call of (chain.neq as ReturnType<typeof vi.fn>).mock.calls) {
+      expect(call).not.toEqual(['status', 'scheduled'])
+    }
+  })
+
   it('sorts by start_time ascending for the "upcoming" sort mode, nulls last', async () => {
     const { client, chain } = makeFakeClient({ data: [], error: null })
     vi.mocked(createClient).mockReturnValue(client as never)

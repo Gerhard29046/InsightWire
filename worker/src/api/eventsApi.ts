@@ -146,7 +146,16 @@ export async function listEvents(config: EventsApiConfig, query: ListEventsQuery
   if (query.importance?.length) q = q.in('importance', query.importance)
   if (query.languages?.length) q = q.in('language', query.languages)
   if (query.sources?.length) q = q.in('source', query.sources)
+  // The Global Events Feed ("what's happening right now") and the Calendar
+  // ("what's scheduled to happen") read the same table but must never blend:
+  // a newly-discovered scheduled event has a recent published_at (it was
+  // just ingested) even though the event itself is weeks away, so without
+  // this it would sort to the top of "latest" looking like breaking news.
+  // 'scheduled' rows are therefore excluded by default and only surfaced
+  // when a caller explicitly asks for them via `statuses` (the Calendar's
+  // own query always does).
   if (query.statuses?.length) q = q.in('status', query.statuses)
+  else q = q.neq('status', 'scheduled')
   if (query.verifiedOnly) q = q.eq('verification_status', 'verified')
   if (query.liveOnly) q = q.eq('status', 'live')
   if (query.futureOnly) q = q.gt('start_time', new Date().toISOString())

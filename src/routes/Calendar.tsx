@@ -3,8 +3,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, Globe2 } 
 import { clsx } from 'clsx'
 import { categories, categoryById, type CategoryId } from '../lib/categories'
 import { formatMonthYear, isSameDay, toDateKey } from '../lib/calendarData'
-import { createEmptyFilters, type NormalizedEvent } from '../lib/api/types'
-import { useEventsFeed } from '../hooks/useEventsFeed'
+import type { NormalizedEvent } from '../lib/api/types'
+import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { EmptyState } from '../components/feed/EmptyState'
 import { ErrorState } from '../components/feed/ErrorState'
 import { LoadingSkeleton } from '../components/feed/LoadingSkeleton'
@@ -12,13 +12,6 @@ import { EventImportance } from '../components/feed/EventImportance'
 import { TagInput } from '../components/feed/TagInput'
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-/**
- * The calendar needs a wide window of results to populate a month grid,
- * unlike the Feed's 25-per-page default — large enough for today's real
- * coverage (a handful of connectors) without pretending pagination
- * disappears once coverage grows.
- */
-const CALENDAR_PAGE_SIZE = 200
 
 function buildMonthGrid(monthStart: Date): Date[] {
   const year = monthStart.getFullYear()
@@ -66,17 +59,11 @@ export default function Calendar() {
     })
   }
 
-  const filters = useMemo(() => {
-    const f = createEmptyFilters()
-    f.futureOnly = true
-    f.statuses = ['scheduled']
-    f.categories = [...activeCategories]
-    f.countries = countries
-    f.search = search
-    return f
-  }, [activeCategories, countries, search])
-
-  const { events, status, error, refresh } = useEventsFeed(filters, 'upcoming', CALENDAR_PAGE_SIZE)
+  const { events, status, error, refresh } = useCalendarEvents({
+    categories: [...activeCategories],
+    countries,
+    search,
+  })
 
   // Events with no real startTime can't be placed on a calendar — excluded
   // from the grid/agenda rather than shown under a fabricated date. This
