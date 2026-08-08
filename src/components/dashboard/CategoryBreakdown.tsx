@@ -1,14 +1,18 @@
-import { categories } from '../../lib/categories'
-import type { NormalizedEvent } from '../../lib/api/types'
+import { categoryById } from '../../lib/categories'
+import type { CategoryCount } from '../../lib/api/dashboard'
 
-export function CategoryBreakdown({ events }: { events: NormalizedEvent[] }) {
-  const counts = categories
-    .map((cat) => ({
-      ...cat,
-      count: events.filter((e) => e.category === cat.id).length,
-    }))
-    .sort((a, b) => b.count - a.count)
-
+/**
+ * Takes the real, exact per-category counts computed server-side by
+ * GET /dashboard/summary (worker/src/api/dashboardApi.ts) over the full
+ * reporting window — not derived from whatever small sample of events the
+ * page happens to also be displaying elsewhere. An earlier version of this
+ * component computed counts by filtering the Dashboard's own 6-event
+ * "highest signal" list, which meant "Signal by category" only ever showed
+ * numbers between 0 and 6 regardless of how many real events actually
+ * existed — a real, silent bug, not a mock value, but just as misleading.
+ */
+export function CategoryBreakdown({ breakdown }: { breakdown: CategoryCount[] }) {
+  const counts = breakdown.map((c) => ({ ...categoryById[c.category], count: c.count })).sort((a, b) => b.count - a.count)
   const max = Math.max(...counts.map((c) => c.count), 1)
 
   return (

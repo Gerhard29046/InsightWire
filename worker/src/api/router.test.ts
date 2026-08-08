@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleApiRequest } from './router'
 import * as eventsApi from './eventsApi'
 import * as briefApi from './briefApi'
+import * as dashboardApi from './dashboardApi'
 import type { Env } from '../env'
 
 vi.mock('./eventsApi', async (importOriginal) => {
@@ -12,6 +13,11 @@ vi.mock('./eventsApi', async (importOriginal) => {
 vi.mock('./briefApi', async (importOriginal) => {
   const actual = await importOriginal<typeof briefApi>()
   return { ...actual, getLatestBrief: vi.fn(), generateBrief: vi.fn() }
+})
+
+vi.mock('./dashboardApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof dashboardApi>()
+  return { ...actual, getDashboardSummary: vi.fn() }
 })
 
 const configuredEnv: Env = {
@@ -84,6 +90,60 @@ describe('handleApiRequest', () => {
     vi.mocked(eventsApi.getEventDetail).mockResolvedValue(undefined)
     const res = await handleApiRequest(new Request('https://worker.test/events/missing'), configuredEnv)
     expect(res?.status).toBe(404)
+  })
+
+  describe('GET /dashboard/summary', () => {
+    const summary = {
+      eventsTracked24h: 517,
+      highPriorityAlerts24h: 12,
+      countriesReporting: 4,
+      sourcesReporting: 5,
+      categoryBreakdown: [{ category: 'government', count: 40 }],
+      highestSignalEvents: [],
+      generatedAt: '2026-08-08T00:00:00.000Z',
+    }
+
+    it('calls getDashboardSummary with the default window and returns its result as JSON', async () => {
+      vi.mocked(dashboardApi.getDashboardSummary).mockResolvedValue(summary as never)
+      const res = await handleApiRequest(new Request('https://worker.test/dashboard/summary'), configuredEnv)
+      expect(res?.status).toBe(200)
+      expect(res?.headers.get('Access-Control-Allow-Origin')).toBe('*')
+      expect(await res?.json()).toEqual(summary)
+      expect(dashboardApi.getDashboardSummary).toHaveBeenCalledWith(
+        { url: configuredEnv.SUPABASE_URL, serviceRoleKey: configuredEnv.SUPABASE_SERVICE_ROLE_KEY },
+        undefined,
+      )
+    })
+
+    it('passes a numeric ?hours= override through', async () => {
+      vi.mocked(dashboardApi.getDashboardSummary).mockResolvedValue(summary as never)
+      await handleApiRequest(new Request('https://worker.test/dashboard/summary?hours=6'), configuredEnv)
+      expect(dashboardApi.getDashboardSummary).toHaveBeenCalledWith(expect.anything(), 6)
+    })
+
+    it('ignores a malformed ?hours= value rather than passing NaN through', async () => {
+      vi.mocked(dashboardApi.getDashboardSummary).mockResolvedValue(summary as never)
+      await handleApiRequest(new Request('https://worker.test/dashboard/summary?hours=notanumber'), configuredEnv)
+      expect(dashboardApi.getDashboardSummary).toHaveBeenCalledWith(expect.anything(), undefined)
+    })
+
+    it('returns 503 when Supabase env is not configured', async () => {
+      const res = await handleApiRequest(new Request('https://worker.test/dashboard/summary'), unconfiguredEnv)
+      expect(res?.status).toBe(503)
+      expect(dashboardApi.getDashboardSummary).not.toHaveBeenCalled()
+    })
+
+    it('returns 500 when getDashboardSummary throws', async () => {
+      vi.mocked(dashboardApi.getDashboardSummary).mockRejectedValue(new Error('query failed'))
+      const res = await handleApiRequest(new Request('https://worker.test/dashboard/summary'), configuredEnv)
+      expect(res?.status).toBe(500)
+      expect(await res?.json()).toEqual({ error: 'query failed' })
+    })
+
+    it('answers OPTIONS preflight for /dashboard too', async () => {
+      const res = await handleApiRequest(new Request('https://worker.test/dashboard/summary', { method: 'OPTIONS' }), configuredEnv)
+      expect(res?.status).toBe(204)
+    })
   })
 
   describe('GET /events/:id/brief', () => {

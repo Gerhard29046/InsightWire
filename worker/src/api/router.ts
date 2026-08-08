@@ -2,6 +2,7 @@ import type { Env } from '../env'
 import { selectRepository } from '../env'
 import { generateBrief, getLatestBrief } from './briefApi'
 import { getEventDetail, listEvents, parseListEventsQuery } from './eventsApi'
+import { getDashboardSummary } from './dashboardApi'
 
 /**
  * A read-only-by-default public API — CORS is intentionally open (`*`),
@@ -50,7 +51,7 @@ function errorResponse(err: unknown): Response {
 export async function handleApiRequest(request: Request, env: Env): Promise<Response | undefined> {
   const url = new URL(request.url)
 
-  if (request.method === 'OPTIONS' && url.pathname.startsWith('/events')) {
+  if (request.method === 'OPTIONS' && (url.pathname.startsWith('/events') || url.pathname.startsWith('/dashboard'))) {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
@@ -60,6 +61,22 @@ export async function handleApiRequest(request: Request, env: Env): Promise<Resp
       const query = parseListEventsQuery(url.searchParams)
       const result = await listEvents({ url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY }, query)
       return json(result)
+    } catch (err) {
+      return errorResponse(err)
+    }
+  }
+
+  /** GET /dashboard/summary — the Dashboard's one real aggregation query set (see dashboardApi.ts's own doc comment). Optional ?hours= overrides the default 24-hour reporting window. */
+  if (url.pathname === '/dashboard/summary' && request.method === 'GET') {
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return notConfigured('Supabase')
+    try {
+      const hoursParam = url.searchParams.get('hours')
+      const windowHours = hoursParam ? Number(hoursParam) : undefined
+      const summary = await getDashboardSummary(
+        { url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY },
+        windowHours != null && !Number.isNaN(windowHours) ? windowHours : undefined,
+      )
+      return json(summary)
     } catch (err) {
       return errorResponse(err)
     }
