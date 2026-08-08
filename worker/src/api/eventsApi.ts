@@ -23,7 +23,8 @@ function client({ url, serviceRoleKey }: EventsApiConfig): SupabaseClient {
   return createClient(url, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } })
 }
 
-const SELECT_COLUMNS =
+/** Exported so dashboardApi.ts's own queries stay in sync with this schema automatically rather than re-typing the column list. */
+export const SELECT_COLUMNS =
   'id, title, description, summary, country, city, lat, lng, category, source, source_url, start_time, end_time, published_at, updated_at, importance, confidence, verification_status, language, people, organizations, keywords, tags, status, source_trust_score, priority_score'
 
 export type EventSortMode = 'latest' | 'importance' | 'trending' | 'confidence' | 'recently-updated' | 'upcoming'

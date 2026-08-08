@@ -44,14 +44,21 @@ function describe(error: unknown): Description {
   }
 }
 
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+interface ErrorStateProps {
+  error: unknown
+  onRetry: () => void
+  /** Overrides the generic per-error-type title (e.g. "Something went wrong") with page-specific copy — the underlying diagnostic description (offline/timeout/auth/server) is still shown, just not this headline. */
+  title?: string
+}
+
+export function ErrorState({ error, onRetry, title: titleOverride }: ErrorStateProps) {
   const { Icon, title, description } = describe(error)
   return (
     <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-red-50/40 p-12 text-center dark:border-red-900/50 dark:bg-red-950/20">
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
         <Icon className="h-6 w-6" aria-hidden />
       </div>
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
+      <h2 className="text-base font-semibold text-slate-900 dark:text-white">{titleOverride ?? title}</h2>
       <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">{description}</p>
       <button
         type="button"
