@@ -4,7 +4,7 @@ AI-powered Newsroom Intelligence Platform — helps journalists discover, track,
 
 ## Vision
 
-Not a news website. A continuous intelligence system: crawlers gather information from trusted public sources, AI analyzes and scores it, and a dashboard surfaces it via timelines, calendars, maps, and alerts across government, business, courts, markets, elections, weather/disasters, conflicts, and science.
+Not a news website, and not a weather service. A continuous intelligence system: crawlers gather information from trusted public sources, AI analyzes and scores it, and a dashboard surfaces it via timelines, calendars, maps, and alerts across government, business, courts, markets, elections, natural disasters, conflicts, and science. Routine weather (forecasts, thunderstorm/wind statements, ordinary alerts) is deliberately excluded — only genuinely significant natural disasters (major earthquake, tsunami, volcanic eruption, major cyclone, catastrophic flooding, major wildfire) are journalistically relevant here (see `docs/decisions/0014-remove-weather-keep-natural-disasters.md`).
 
 ## Stack
 

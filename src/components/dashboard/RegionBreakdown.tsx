@@ -25,7 +25,7 @@ export function RegionBreakdown({ breakdown }: { breakdown: RegionCount[] }) {
             </span>
             <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <span
-                className="block h-full rounded-full bg-sky-500 dark:bg-sky-400"
+                className="block h-full rounded-full bg-[var(--accent)] dark:bg-[var(--accent)]"
                 style={{ width: `${(r.count / max) * 100}%` }}
               />
             </span>
@@ -35,7 +35,7 @@ export function RegionBreakdown({ breakdown }: { breakdown: RegionCount[] }) {
             {r.count > 0 ? (
               <Link
                 to={`/feed?region=${encodeURIComponent(r.region)}`}
-                className="shrink-0 text-xs font-medium text-sky-500 hover:text-sky-600 hover:underline"
+                className="shrink-0 text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] hover:underline"
               >
                 View →
               </Link>

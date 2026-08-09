@@ -112,6 +112,21 @@ describe('getDashboardSummary', () => {
     }
   })
 
+  it('excludes category=weather on every one of the 4 queries — InsightWire is not a weather platform', async () => {
+    const { client, chains } = makeSequencedClient([
+      { data: null, error: null, count: 0 },
+      { data: null, error: null, count: 0 },
+      { data: [], error: null },
+      { data: [], error: null },
+    ])
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await getDashboardSummary(config)
+    for (const chain of chains) {
+      expect(chain.neq).toHaveBeenCalledWith('category', 'weather')
+    }
+  })
+
   it('filters the high-priority count using the same BREAKING_PRIORITY_THRESHOLD the Feed uses', async () => {
     const { client, chains } = makeSequencedClient([
       { data: null, error: null, count: 0 },
@@ -227,7 +242,7 @@ describe('getDashboardSummary', () => {
     const diversityRows = [
       diversityRow('South Africa', 'south-africa-gov', 'government'),
       diversityRow('South Africa', 'south-africa-gov', 'government'),
-      diversityRow('Japan', 'gdacs-alerts', 'weather'),
+      diversityRow('Japan', 'gdacs-alerts', 'natural_disasters'),
     ]
     const { client } = makeSequencedClient([
       { data: null, error: null, count: 0 },

@@ -1,66 +1,57 @@
-import { Map } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useGeoReadiness } from '../hooks/useGeoReadiness'
+import { ErrorState } from '../components/feed/ErrorState'
+import { EmptyState } from '../components/feed/EmptyState'
+import { GeoIntelligenceMap } from '../components/map/GeoIntelligenceMap'
+import { MapLegend } from '../components/map/MapLegend'
+import { useMapSummary } from '../hooks/useMapSummary'
 
 /**
- * A prepared placeholder, not a built map — see Phase 5 of the Global Feeds
- * plan. The intended future data contract (documented here so the boundary
- * is clear without building any of it yet): world → continent → country →
- * event → detail, each level filtering `GET /events` by the real `country`
- * field the same way the Events Feed's region/country filters already do.
- * No map-rendering library is added in this phase.
+ * The Geographic Intelligence Map: real per-country aggregates (a country
+ * name alone is legitimate geography — no coordinates required) plus a
+ * capped set of exact-coordinate markers, rendered as a flat editorial
+ * atlas (Equal Earth projection, Africa-centered, real Natural Earth
+ * boundary data via `world-atlas` — see GeoIntelligenceMap.tsx). Clicking a
+ * country or marker reuses the existing, already-working `/feed?country=`
+ * filter — no separate filtering mechanism exists for the map.
  */
 export default function WorldMap() {
-  const { readiness, status } = useGeoReadiness()
-  const total = readiness ? readiness.withCoordinates + readiness.withoutCoordinates : 0
-  const pct = readiness && total > 0 ? Math.round((readiness.withCoordinates / total) * 100) : null
+  const { summary, status, refresh } = useMapSummary()
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="flex min-h-[60vh] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 p-12 text-center dark:border-slate-800 dark:bg-slate-900/40"
-    >
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500">
-        <Map className="h-6 w-6" aria-hidden />
-      </div>
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-white">World Map</h1>
-      <p className="mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
-        Geospatial view of tracked events — conflicts, disasters, elections, and more. Not built
-        yet; here's the real state of the data it would need.
-      </p>
-
-      {status === 'loading' && (
-        <p className="mt-5 text-xs text-slate-400 dark:text-slate-500">Checking real coordinate coverage…</p>
-      )}
-      {status === 'not-configured' && (
-        <p className="mt-5 text-xs text-slate-400 dark:text-slate-500">
-          Backend not connected — coordinate coverage can't be checked yet.
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Geographic Intelligence Map</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Where the world's significant events are happening — not a GPS pin for every article.
+          Countries are shaded from real event data even without exact coordinates; hover or click
+          a country for detail.
         </p>
-      )}
-      {status === 'error' && (
-        <p className="mt-5 text-xs text-slate-400 dark:text-slate-500">Couldn't load coordinate coverage right now.</p>
-      )}
-      {status === 'ready' && readiness && (
-        <div className="mt-5 w-full max-w-xs">
-          <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-white">
-            {readiness.withCoordinates.toLocaleString()}
-            <span className="ml-1.5 text-sm font-normal text-slate-400 dark:text-slate-500">
-              / {total.toLocaleString()} events have coordinates
-            </span>
-          </p>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="h-full rounded-full bg-sky-500 dark:bg-sky-400" style={{ width: `${pct ?? 0}%` }} />
-          </div>
-          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-            {readiness.withoutCoordinates.toLocaleString()} real events currently have no single
-            point location (most text-only government/news sources report a country, not
-            coordinates) — a real gap a future map would need to represent honestly, e.g. by
-            country-level shading rather than pins.
-          </p>
+      </div>
+
+      {status === 'not-configured' && <EmptyState variant="not-configured" />}
+      {status === 'error' && <ErrorState error={null} onRetry={refresh} title="Unable to load map data." />}
+      {status === 'loading' && (
+        <div className="flex h-[460px] items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500">
+          Loading real event geography…
         </div>
       )}
-    </motion.div>
+
+      {status === 'ready' && summary && (
+        <>
+          <GeoIntelligenceMap countries={summary.countries} markers={summary.markers} />
+          <MapLegend />
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            {summary.countries.length.toLocaleString()} countries reporting real events in the last{' '}
+            {Math.round(summary.windowHours / 24)} days
+            {summary.unknownCount > 0 && (
+              <>
+                {' '}
+                · {summary.unknownCount.toLocaleString()} events have no known location (neither a
+                real country nor coordinates) and aren't shown on the map.
+              </>
+            )}
+          </p>
+        </>
+      )}
+    </div>
   )
 }

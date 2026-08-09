@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { Footer } from './Footer'
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -24,6 +25,7 @@ export function AppShell() {
         <main className="p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
+        <Footer />
       </div>
     </div>
   )

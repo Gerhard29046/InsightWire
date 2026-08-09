@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, RefreshCw, Sparkles } from 'lucide-react'
 import { EventCard } from '../components/feed/EventCard'
@@ -9,6 +10,7 @@ import { EntityNameDisplay } from '../components/entities/EntityNameDisplay'
 import { entityTypeById } from '../lib/entityTypes'
 import { useEntityDetail } from '../hooks/useEntityDetail'
 import { useEntityBrief } from '../hooks/useEntityBrief'
+import { logRecentActivity } from '../lib/recentActivity'
 import type { ConnectedEntity, EntityType } from '../lib/api/entities'
 
 function formatTime(iso: string): string {
@@ -44,6 +46,11 @@ export default function EntityDetail() {
   const { id } = useParams<{ id: string }>()
   const { detail, status, error, refresh } = useEntityDetail(id)
   const entityBrief = useEntityBrief(detail?.entity.id)
+
+  useEffect(() => {
+    if (!detail) return
+    logRecentActivity({ kind: 'viewed_entity', label: detail.entity.name, href: `/entities/${encodeURIComponent(detail.entity.id)}` })
+  }, [detail])
 
   if (status === 'loading') {
     return (
@@ -236,13 +243,13 @@ export default function EntityDetail() {
                       {r.direction === 'outgoing' ? (
                         <>
                           <span className="font-medium">{entity.name}</span> {RELATIONSHIP_LABELS[r.relationshipType] ?? r.relationshipType}{' '}
-                          <Link to={`/entities/${encodeURIComponent(r.relatedEntity.id)}`} className="font-medium text-sky-500 hover:text-sky-600">
+                          <Link to={`/entities/${encodeURIComponent(r.relatedEntity.id)}`} className="font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]">
                             {r.relatedEntity.name}
                           </Link>
                         </>
                       ) : (
                         <>
-                          <Link to={`/entities/${encodeURIComponent(r.relatedEntity.id)}`} className="font-medium text-sky-500 hover:text-sky-600">
+                          <Link to={`/entities/${encodeURIComponent(r.relatedEntity.id)}`} className="font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]">
                             {r.relatedEntity.name}
                           </Link>{' '}
                           {RELATIONSHIP_LABELS[r.relationshipType] ?? r.relationshipType} <span className="font-medium">{entity.name}</span>
@@ -255,7 +262,7 @@ export default function EntityDetail() {
                     <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                       <span>Confidence: {Math.round(r.confidence * 100)}%</span>
                       <span>·</span>
-                      <Link to={`/feed/${encodeURIComponent(r.evidenceEvent.id)}`} className="text-sky-500 hover:text-sky-600">
+                      <Link to={`/feed/${encodeURIComponent(r.evidenceEvent.id)}`} className="text-[var(--accent)] hover:text-[var(--accent-hover)]">
                         {r.evidenceEvent.title}
                       </Link>
                     </div>
@@ -341,7 +348,7 @@ function RelatedList({ items, empty }: { items: ConnectedEntity[]; empty: string
           <li key={connected.entity.id}>
             <Link
               to={`/entities/${encodeURIComponent(connected.entity.id)}`}
-              className="flex flex-col gap-1 rounded-lg border border-slate-100 p-3 transition-colors hover:border-sky-300 dark:border-slate-800 dark:hover:border-sky-800"
+              className="flex flex-col gap-1 rounded-lg border border-slate-100 p-3 transition-colors hover:border-[var(--accent)]/40 dark:border-slate-800 dark:hover:border-[var(--accent-hover)]/50"
             >
               <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
                 <connectedMeta.icon className="h-3.5 w-3.5" aria-hidden />

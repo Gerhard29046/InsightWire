@@ -1,5 +1,7 @@
-import { Menu, Moon, Search, Sun } from 'lucide-react'
+import { Menu, Moon, Sun } from 'lucide-react'
 import { useTheme } from '../../lib/useTheme'
+import { GlobalSearch } from './GlobalSearch'
+import { ProfileMenu } from './ProfileMenu'
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -19,17 +21,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Menu className="h-5 w-5" aria-hidden />
       </button>
 
-      <label className="relative flex-1 max-w-lg">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-          aria-hidden
-        />
-        <input
-          type="search"
-          placeholder="Search events, entities, sources…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/30 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-        />
-      </label>
+      <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-2">
         <button
@@ -44,7 +36,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             <Moon className="h-5 w-5" aria-hidden />
           )}
         </button>
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500" />
+        <ProfileMenu />
       </div>
     </header>
   )

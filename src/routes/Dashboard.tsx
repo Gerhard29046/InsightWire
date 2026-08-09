@@ -76,7 +76,7 @@ export default function Dashboard() {
             className={clsx(
               'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               region === r
-                ? 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent-hover)] dark:border-[var(--accent-hover)]/50 dark:bg-[var(--accent-hover)]/15 dark:text-[var(--accent)]'
                 : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300',
             )}
           >
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 <div className="flex flex-col gap-3 xl:col-span-2">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Significant events</h2>
-                    <Link to={feedLink(region)} className="text-xs font-medium text-sky-500 hover:text-sky-600">
+                    <Link to={feedLink(region)} className="text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]">
                       View full feed →
                     </Link>
                   </div>

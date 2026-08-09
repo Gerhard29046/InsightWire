@@ -10,6 +10,12 @@ import { ZimbabweZbcConnector } from './connectors/sources/zimbabweZbc'
 import { SAnewsConnector, SAnewsFeaturesConnector } from './connectors/sources/sanews'
 import { SouthAfricaGovEventsConnector } from './connectors/sources/southAfricaGovEvents'
 import { SouthAfricaPresidencyEventsConnector } from './connectors/sources/southAfricaPresidencyEvents'
+import { UsFederalReserveConnector } from './connectors/sources/usFederalReserve'
+import { UsWhiteHouseConnector } from './connectors/sources/usWhiteHouse'
+import { UkGovernmentConnector } from './connectors/sources/ukGovernment'
+import { BankOfEnglandConnector } from './connectors/sources/bankOfEngland'
+import { EuCommissionConnector } from './connectors/sources/euCommission'
+import { EcbConnector } from './connectors/sources/ecb'
 import { ConnectorManager } from './manager/ConnectorManager'
 import type { ConnectorManagerOptions } from './manager/ConnectorManager'
 
@@ -34,10 +40,18 @@ export { ZimbabweZbcConnector } from './connectors/sources/zimbabweZbc'
 export { SAnewsConnector, SAnewsFeaturesConnector } from './connectors/sources/sanews'
 export { SouthAfricaGovEventsConnector } from './connectors/sources/southAfricaGovEvents'
 export { SouthAfricaPresidencyEventsConnector } from './connectors/sources/southAfricaPresidencyEvents'
+export { UsFederalReserveConnector } from './connectors/sources/usFederalReserve'
+export { UsWhiteHouseConnector } from './connectors/sources/usWhiteHouse'
+export { UkGovernmentConnector } from './connectors/sources/ukGovernment'
+export { BankOfEnglandConnector } from './connectors/sources/bankOfEngland'
+export { EuCommissionConnector } from './connectors/sources/euCommission'
+export { EcbConnector } from './connectors/sources/ecb'
 
 export { ConnectorManager } from './manager/ConnectorManager'
 export type { ConnectorManagerOptions } from './manager/ConnectorManager'
 export { consoleLogger } from './manager/logger'
+export { recordConnectorRun } from './manager/supabaseConnectorRuns'
+export type { SupabaseConnectorRunsConfig } from './manager/supabaseConnectorRuns'
 export { InMemoryMetricsStore } from './manager/metrics'
 export { withRetry } from './manager/retry'
 export { runWithConcurrency } from './manager/concurrency'
@@ -151,6 +165,12 @@ export function createDefaultRegistry(): ConnectorRegistry {
   registry.register(new SAnewsFeaturesConnector())
   registry.register(new SouthAfricaGovEventsConnector())
   registry.register(new SouthAfricaPresidencyEventsConnector())
+  registry.register(new UsFederalReserveConnector())
+  registry.register(new UsWhiteHouseConnector())
+  registry.register(new UkGovernmentConnector())
+  registry.register(new BankOfEnglandConnector())
+  registry.register(new EuCommissionConnector())
+  registry.register(new EcbConnector())
   return registry
 }
 

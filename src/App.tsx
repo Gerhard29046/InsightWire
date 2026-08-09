@@ -11,8 +11,12 @@ import TimelineBuilder from './routes/TimelineBuilder'
 import WorldMap from './routes/WorldMap'
 import HistoryDetail from './routes/HistoryDetail'
 import Workspace from './routes/Workspace'
+import SearchResults from './routes/SearchResults'
 import Assistant from './routes/Assistant'
 import Admin from './routes/Admin'
+import LegalIndex from './routes/LegalIndex'
+import LegalDocument from './routes/LegalDocument'
+import UserProfile from './routes/UserProfile'
 
 function App() {
   return (
@@ -29,8 +33,12 @@ function App() {
         <Route path="map" element={<WorldMap />} />
         <Route path="history/:id" element={<HistoryDetail />} />
         <Route path="workspace" element={<Workspace />} />
+        <Route path="search" element={<SearchResults />} />
         <Route path="assistant" element={<Assistant />} />
         <Route path="admin" element={<Admin />} />
+        <Route path="legal" element={<LegalIndex />} />
+        <Route path="legal/:slug" element={<LegalDocument />} />
+        <Route path="profile" element={<UserProfile />} />
       </Route>
     </Routes>
   )

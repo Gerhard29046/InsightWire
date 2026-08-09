@@ -222,6 +222,18 @@ describe('listEntities', () => {
     expect(result.entities.find((e) => e.id === 'e-tiny')?.mentionCount).toBe(1)
   })
 
+  it('excludes weather when computing mentionCount — an entity must not stay inflated by already-stored weather links', async () => {
+    const rows = [makeEntityRow({ id: 'e-1', name: 'United States' })]
+    const { client, chains } = makeFakeClient({
+      entities: [{ data: rows, error: null, count: 1 }],
+      entity_event_links: [{ data: null, error: null, count: 5 }],
+    })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEntities(config, {})
+    expect(chains.entity_event_links[0].neq).toHaveBeenCalledWith('normalized_events.category', 'weather')
+  })
+
   it('sort="active" ranks a bounded candidate pool by real mentionCount desc, not last_seen_at', async () => {
     const rows = [
       makeEntityRow({ id: 'e-low', name: 'Low Activity' }),
@@ -352,6 +364,10 @@ describe('getEntityDetail', () => {
     expect(chains.entity_event_links[8].eq).toHaveBeenCalledWith('normalized_events.status', 'scheduled')
     // computeConnectedEntities must also exclude "topic" entities — real but not journalist-facing (see DEFAULT_EXCLUDED_TYPE), and the frontend has no rendering for that type.
     expect(chains.entity_event_links[9].neq).toHaveBeenCalledWith('entities.entity_type', 'topic')
+    // Every one of these 9 real queries must also exclude weather — InsightWire is not a weather platform, and an entity's stats/lists must not stay inflated by already-stored weather links.
+    for (const chain of chains.entity_event_links.slice(0, 9)) {
+      expect(chain.neq).toHaveBeenCalledWith('normalized_events.category', 'weather')
+    }
   })
 
   it('caps co-occurrence to a bounded recent-event window rather than an unbounded id list (the real fix for the "United States"-scale 520 bug)', async () => {
@@ -457,5 +473,47 @@ describe('getEntityDetail', () => {
       evidenceSnippet: 'held talks with the German Chancellor',
       evidenceEvent: { id: 'sanews:ev-1', sourceUrl: 'https://www.sanews.gov.za/x' },
     })
+  })
+
+  it('excludes weather from relationship evidence-event lookups — a relationship whose only evidence is a weather event is dropped, not shown', async () => {
+    const entityRow = makeEntityRow({ id: 'e-1', entity_type: 'person', name: 'Ramaphosa' })
+    const otherEntityRow = makeEntityRow({ id: 'e-germany', entity_type: 'country', name: 'Germany' })
+
+    const { client, chains } = makeFakeClient({
+      entities: [{ data: entityRow, error: null }, { data: [otherEntityRow], error: null }],
+      entity_event_links: [
+        { data: null, error: null, count: 0 },
+        { data: null, error: null, count: 0 },
+        { data: null, error: null, count: 0 },
+        { data: null, error: null, count: 0 },
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+        { data: [], error: null },
+      ],
+      entity_relationships: [
+        {
+          data: [
+            {
+              entity_id: 'e-1',
+              related_entity_id: 'e-germany',
+              relationship_type: 'mentioned_with',
+              confidence: 0.8,
+              evidence_snippet: 'held talks with the German Chancellor',
+              evidence_event_id: 'nws-alerts:ev-1',
+            },
+          ],
+          error: null,
+        },
+      ],
+      // The evidence event is excluded by the query's own weather filter (empty result), simulating a real weather-only-evidence relationship.
+      normalized_events: [{ data: [], error: null }],
+    })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    const detail = await getEntityDetail(config, 'e-1')
+    expect(detail?.relationships).toEqual([])
+    expect(chains.normalized_events[0].neq).toHaveBeenCalledWith('category', 'weather')
   })
 })

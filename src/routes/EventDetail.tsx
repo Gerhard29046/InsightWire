@@ -1,5 +1,6 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, ExternalLink, HelpCircle, MapPin, RefreshCw, ShieldAlert, Sparkles } from 'lucide-react'
+import { ArrowLeft, Bookmark, Check, ExternalLink, HelpCircle, MapPin, RefreshCw, ShieldAlert, Sparkles } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { clsx } from 'clsx'
 import { CategoryBadge } from '../components/dashboard/CategoryBadge'
@@ -11,6 +12,8 @@ import { LoadingSkeleton } from '../components/feed/LoadingSkeleton'
 import { ErrorState } from '../components/feed/ErrorState'
 import { useEventDetail } from '../hooks/useEventDetail'
 import { useJournalistBrief } from '../hooks/useJournalistBrief'
+import { useBookmarkStatus } from '../hooks/useBookmarkStatus'
+import { logRecentActivity } from '../lib/recentActivity'
 import type { VerificationStatus } from '../lib/api/types'
 
 const verificationMeta: Record<VerificationStatus, { label: string; icon: LucideIcon; className: string }> = {
@@ -27,6 +30,12 @@ export default function EventDetail() {
   const { id } = useParams<{ id: string }>()
   const { detail, status, error, refresh } = useEventDetail(id)
   const journalistBrief = useJournalistBrief(detail?.event.id)
+  const { bookmarked, toggle: toggleBookmark } = useBookmarkStatus(detail?.event.id ?? '')
+
+  useEffect(() => {
+    if (!detail) return
+    logRecentActivity({ kind: 'viewed_event', label: detail.event.title, href: `/feed/${encodeURIComponent(detail.event.id)}` })
+  }, [detail])
 
   if (status === 'loading') {
     return (
@@ -79,7 +88,7 @@ export default function EventDetail() {
               href={event.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-sky-500 hover:text-sky-600"
+              className="inline-flex items-center gap-1 font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]"
             >
               Read original source
               <ExternalLink className="h-3.5 w-3.5" aria-hidden />
@@ -106,6 +115,21 @@ export default function EventDetail() {
               <div className="font-medium text-slate-700 dark:text-slate-200">{event.priorityScore}/100</div>
             </div>
           )}
+        </div>
+
+        <div className="mt-4 flex items-center border-t border-slate-100 pt-4 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={toggleBookmark}
+            aria-pressed={bookmarked}
+            className={clsx(
+              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800',
+              bookmarked ? 'text-[var(--accent)]' : 'text-slate-500 dark:text-slate-400',
+            )}
+          >
+            <Bookmark className="h-3.5 w-3.5" fill={bookmarked ? 'currentColor' : 'none'} aria-hidden />
+            {bookmarked ? 'Bookmarked' : 'Bookmark'}
+          </button>
         </div>
       </div>
 
@@ -199,7 +223,7 @@ export default function EventDetail() {
                   <Link
                     key={related.id}
                     to={`/feed/${encodeURIComponent(related.id)}`}
-                    className="rounded-lg border border-slate-100 p-3 text-sm transition-colors hover:border-sky-300 dark:border-slate-800 dark:hover:border-sky-800"
+                    className="rounded-lg border border-slate-100 p-3 text-sm transition-colors hover:border-[var(--accent)]/40 dark:border-slate-800 dark:hover:border-[var(--accent-hover)]/50"
                   >
                     <div className="font-medium text-slate-800 dark:text-slate-100">{related.title}</div>
                     <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
@@ -223,7 +247,7 @@ export default function EventDetail() {
                     <div className="font-medium">{s.connectorId}</div>
                     <div className="text-xs text-slate-400 dark:text-slate-500">Reported {formatTime(s.reportedAt)}</div>
                     {s.sourceUrl && (
-                      <a href={s.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-sky-500 hover:text-sky-600">
+                      <a href={s.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)]">
                         Open <ExternalLink className="h-3 w-3" aria-hidden />
                       </a>
                     )}

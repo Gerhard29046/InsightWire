@@ -112,6 +112,10 @@ async function rememberForDedupe(duplicateIndex: DuplicateIndex, event: Normaliz
     description: event.description,
     status: event.status,
     importance: event.importance,
+    category: event.category,
+    country: event.country,
+    publishedAt: event.publishedAt,
+    source: event.source,
   })
 }
 
@@ -223,14 +227,23 @@ export async function processMessage(raw: RawEvent, deps: ProcessMessageDeps): P
   const enrichment = await enrichEvent(candidate, deps.aiProvider)
   const aiLatencyMs = Date.now() - aiStartedAt
 
-  await populateEntityGraph(deps.entityGraphStore, enrichment.event, trustProfile.category)
-
   const finalEvent: NormalizedEvent = {
     ...enrichment.event,
     priorityScore: computePriorityScore({ event: enrichment.event, sourceTrustScore: trustProfile.trustScore }),
   }
 
+  // Must come after upsertNormalizedEvent: entity_event_links.event_id has a
+  // real foreign key on normalized_events.id (see the entity_graph
+  // migration), so populating the graph for a brand-new event before its
+  // row exists always violated that constraint — a real, permanent failure
+  // (not a transient one a retry could ever fix) for any event whose id
+  // hadn't already been stored by a previous run. Already-seen events
+  // happened to succeed only because their row already existed from
+  // before, which is why this went unnoticed until a backlog of genuinely
+  // new events (NWS/Zimbabwe ZBC) surfaced it.
   await deps.repository.upsertNormalizedEvent(finalEvent)
+  await populateEntityGraph(deps.entityGraphStore, finalEvent, trustProfile.category)
+
   if (enrichment.summaryRecord) {
     await deps.repository.recordAiSummary(enrichment.summaryRecord)
   }

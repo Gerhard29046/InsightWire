@@ -1,3 +1,5 @@
 export * from './taxonomy'
 export * from './normalizedEvent'
 export * from './regions'
+export * from './geo'
+export * from './countryGeo'

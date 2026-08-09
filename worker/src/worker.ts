@@ -1,5 +1,7 @@
 import { ConnectorManager, createDefaultRegistry } from './index'
 import { consoleLogger } from './manager/logger'
+import { recordConnectorRun } from './manager/supabaseConnectorRuns'
+import { fetchDisabledSourceIds } from './api/adminApi'
 import type { RawEvent } from './connectors/types'
 import { handleApiRequest } from './api/router'
 import { selectAiProvider } from './pipeline/ai/enrichmentPipeline'
@@ -52,12 +54,60 @@ export default {
    * — connectors have no path to writing anywhere themselves.
    */
   async scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    // Real enforcement for Administration's "Enable/Disable" source
+    // control — without this, disabling a source in the admin UI would only
+    // ever flip a database flag nobody reads (see adminApi.ts's own doc
+    // comment on ConnectorManager.collectDue's `disabledIds` parameter).
+    // Never fatal: if Supabase isn't configured or this query fails, fall
+    // back to "nothing disabled" rather than blocking real ingestion.
+    let disabledSourceIds = new Set<string>()
+    if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        disabledSourceIds = await fetchDisabledSourceIds({ url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY })
+      } catch (err) {
+        console.error(
+          JSON.stringify({
+            level: 'error',
+            event: 'admin.disabledSources.fetchFailed',
+            timestamp: new Date().toISOString(),
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
+      }
+    }
+
     const results = await manager.collectDue(
       (raw) => env.RAW_EVENTS_QUEUE.send(raw).then(() => undefined),
       new Date(controller.scheduledTime),
+      disabledSourceIds,
     )
     const itemsQueued = results.reduce((sum, r) => sum + r.itemsCollected, 0)
     pipelineMetrics.recordCollected(itemsQueued)
+
+    // Real, persisted "which feeds are stale/failing" history — see
+    // supabaseConnectorRuns.ts's own doc comment for why this lives here
+    // (a genuine `await`, not a fire-and-forget) rather than inside
+    // ConnectorManager's synchronous MetricsStore. Isolated per-row so one
+    // failed insert (or Supabase not being configured at all) never masks
+    // or aborts the real collection results already gathered above.
+    if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+      const runsConfig = { url: env.SUPABASE_URL, serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY }
+      await Promise.all(
+        results.map((result) =>
+          recordConnectorRun(runsConfig, result).catch((err) => {
+            console.error(
+              JSON.stringify({
+                level: 'error',
+                event: 'connectorRuns.persist.failed',
+                connectorId: result.connectorId,
+                timestamp: new Date().toISOString(),
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            )
+          }),
+        ),
+      )
+    }
 
     let queueDepth: number | undefined
     try {

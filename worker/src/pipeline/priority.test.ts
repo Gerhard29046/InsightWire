@@ -84,21 +84,21 @@ describe('computePriorityScore', () => {
     expect(veryStale).toBeGreaterThanOrEqual(0)
   })
 
-  it('critical weather events score higher than low-severity weather events via disaster severity', () => {
+  it('critical natural_disasters events score higher than low-severity ones via disaster severity', () => {
     const critical = computePriorityScore({
-      event: makeEvent({ category: 'weather', importance: 'critical' }),
+      event: makeEvent({ category: 'natural_disasters', importance: 'critical' }),
       sourceTrustScore: 0.8,
       now: NOW,
     })
     const low = computePriorityScore({
-      event: makeEvent({ category: 'weather', importance: 'low' }),
+      event: makeEvent({ category: 'natural_disasters', importance: 'low' }),
       sourceTrustScore: 0.8,
       now: NOW,
     })
     expect(critical).toBeGreaterThan(low)
   })
 
-  it('disaster severity does not apply outside the weather category', () => {
+  it('disaster severity does not apply outside the natural_disasters category', () => {
     const criticalScience = computePriorityScore({
       event: makeEvent({ category: 'science', importance: 'critical' }),
       sourceTrustScore: 0.8,
@@ -109,7 +109,7 @@ describe('computePriorityScore', () => {
       sourceTrustScore: 0.8,
       now: NOW,
     })
-    // Importance still feeds nothing else in this formula for non-weather categories,
+    // Importance still feeds nothing else in this formula for non-disaster categories,
     // so these should be equal (importance isn't a direct input outside disaster severity).
     expect(criticalScience).toBe(lowScience)
   })

@@ -135,6 +135,10 @@ describe('SAnews vs. an independent source reporting the same event', () => {
       description: first.description,
       status: first.status,
       importance: first.importance,
+      category: first.category,
+      country: first.country,
+      publishedAt: first.publishedAt,
+      source: first.source,
     })
 
     // Simulate an independent connector reporting the exact same story text under a different id.

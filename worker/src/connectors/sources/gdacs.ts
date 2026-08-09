@@ -45,12 +45,28 @@ export class GdacsConnector extends RssConnector {
       // news-style sources.
       refreshIntervalMs: 15 * 60 * 1000,
       supportedCountries: [],
-      supportedCategories: ['weather'],
+      supportedCategories: ['natural_disasters'],
     })
   }
 
   normalize(raw: RawEvent): NormalizedEvent {
     const item = raw.payload as GdacsItem
+
+    // InsightWire is not a weather platform — a Green-level GDACS notice is
+    // GDACS's own real classification of "no or minimal impact expected"
+    // (see gdacs.org/Knowledge/AlertLevels), i.e. routine, not journalism.
+    // Skipping here (same throw-to-skip pattern nws.ts uses for Test/
+    // keepalive entries) means routine GDACS items never enter the queue or
+    // get stored as a new event at all — not merely hidden downstream.
+    // Absence of an alertlevel is treated the same way: we can't positively
+    // confirm significance, so the conservative choice is to skip rather
+    // than assume newsworthiness. This uses GDACS's own existing severity
+    // field as the bar, not an invented score.
+    const alertLevel = item['gdacs:alertlevel']
+    if (!alertLevel || alertLevel === 'Green') {
+      throw new Error(`${this.id}: skipping routine (${alertLevel ?? 'no alertlevel'}) item (${raw.externalId})`)
+    }
+
     const publishedAt = item.pubDate ? parsePubDate(item.pubDate) : raw.fetchedAt
     const coordinates = extractCoordinates(item)
     const sourceUrl = item.link ? String(item.link) : undefined
@@ -69,7 +85,9 @@ export class GdacsConnector extends RssConnector {
       // doesn't supply one (rare, but real — not every alert names a single country).
       country: item['gdacs:country']?.trim() || 'Global',
       coordinates,
-      category: 'weather',
+      // Only Orange/Red items reach here (Green/absent skipped above) — a
+      // genuinely significant natural disaster, not routine weather.
+      category: 'natural_disasters',
       source: this.name,
       sourceUrl,
       publishedAt,
@@ -83,7 +101,7 @@ export class GdacsConnector extends RssConnector {
       // accurate. Treating a bigger disaster as "more certain" would be a
       // fabricated correlation, so confidence stays at the same honest
       // unscored default GDACS always had.
-      importance: (item['gdacs:alertlevel'] ? GDACS_ALERTLEVEL_TO_IMPORTANCE[item['gdacs:alertlevel']] : undefined) ?? UNSCORED_IMPORTANCE,
+      importance: GDACS_ALERTLEVEL_TO_IMPORTANCE[alertLevel] ?? UNSCORED_IMPORTANCE,
       confidence: UNSCORED_CONFIDENCE,
       verificationStatus: 'unverified',
       language: 'en',

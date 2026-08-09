@@ -82,7 +82,20 @@ const HTML_ENTITY_REPLACEMENTS: Record<string, string> = {
   '&gt;': '>',
   '&quot;': '"',
   '&#39;': "'",
+  '&#8230;': '…',
 }
+
+/**
+ * WordPress's `get_the_excerpt()` default appends "The post <a>Title</a>
+ * appeared first on <a>Site Name</a>." to every RSS item's description —
+ * confirmed live on whitehouse.gov's presidential-actions feed (a
+ * WordPress site); not present on this codebase's other WordPress sources
+ * (ZBC, SAnews) today, but a real, generic WordPress behavior any future
+ * WordPress-based connector could hit, so it's stripped here rather than
+ * per-connector. Anchored to end-of-string since this excerpt suffix is
+ * always the last thing WordPress appends.
+ */
+const WORDPRESS_EXCERPT_SUFFIX_PATTERN = /\s*The post .*? appeared first on .*?\.\s*$/
 
 /**
  * Drupal's default date rendering ("Sat, 08/08/2026 - 08:44"), always
@@ -117,6 +130,7 @@ export function stripHtmlDescription(html: string, title?: string): string {
   }
   text = text.replace(EDITOR_TIMESTAMP_PATTERN, ' ')
   text = text.replace(/\s+/g, ' ').trim()
+  text = text.replace(WORDPRESS_EXCERPT_SUFFIX_PATTERN, '').trim()
   if (title && text.startsWith(title)) {
     text = text.slice(title.length).trim()
   }

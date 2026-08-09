@@ -191,7 +191,14 @@ const CANDIDATE_POOL_SIZE = 30
  */
 export async function selectEventsNeedingExtraction(config: EntityExtractionConfig, batchSize: number): Promise<NormalizedEvent[]> {
   const supabase = client(config)
-  const { data, error } = await supabase.from('normalized_events').select(SELECT_COLUMNS).order('updated_at', { ascending: false }).limit(CANDIDATE_POOL_SIZE)
+  // Defensive: InsightWire is not a weather platform, so weather events
+  // should never be Gemini extraction candidates. This is mostly belt-and-
+  // braces since NWS is disabled and GDACS only produces natural_disasters
+  // going forward — but the category-correction fix in dedupe.ts bumps
+  // `updated_at` on already-stored GDACS rows being corrected, which could
+  // otherwise transiently pull a legacy weather row back into this
+  // most-recently-updated pool.
+  const { data, error } = await supabase.from('normalized_events').select(SELECT_COLUMNS).neq('category', 'weather').order('updated_at', { ascending: false }).limit(CANDIDATE_POOL_SIZE)
   if (error) throw new Error(`selectEventsNeedingExtraction failed: ${error.message}`)
 
   const candidates = ((data ?? []) as NormalizedEventRow[]).map((row) => fromNormalizedEventRow(row, []))

@@ -50,7 +50,7 @@ export function WorldTimeline() {
               <Link
                 key={m.id}
                 to={`/history/${encodeURIComponent(m.id)}`}
-                className="flex w-56 shrink-0 flex-col gap-1.5 rounded-xl border border-slate-200 p-3 transition-colors hover:border-sky-300 hover:bg-sky-50/50 dark:border-slate-800 dark:hover:border-sky-800 dark:hover:bg-sky-950/30"
+                className="flex w-56 shrink-0 flex-col gap-1.5 rounded-xl border border-slate-200 p-3 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/50 dark:border-slate-800 dark:hover:border-[var(--accent-hover)]/50 dark:hover:bg-[var(--accent-hover)]/30"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold tabular-nums text-slate-500 dark:text-slate-400">

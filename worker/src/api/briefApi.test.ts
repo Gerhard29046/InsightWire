@@ -37,7 +37,7 @@ const event: NormalizedEvent = {
   title: 'Severe Thunderstorm Warning',
   description: 'A description.',
   country: 'United States',
-  category: 'weather',
+  category: 'natural_disasters',
   source: 'NWS Active Alerts',
   publishedAt: '2026-08-07T20:52:00.000Z',
   updatedAt: '2026-08-07T20:52:00.000Z',
@@ -125,6 +125,16 @@ describe('generateBrief', () => {
     const provider = makeProvider()
     const repository = makeRepository({ getNormalizedEvent: vi.fn().mockResolvedValue(undefined) })
     const result = await generateBrief({ config, repository, provider }, 'missing')
+    expect(result).toBeUndefined()
+    expect(provider.generateBrief).not.toHaveBeenCalled()
+  })
+
+  it('returns undefined without calling the provider for a weather-categorized event — no AI brief for routine weather, even via a stale id', async () => {
+    const provider = makeProvider()
+    // 'weather' is no longer constructible as a CategoryId in new code, but a real legacy DB row can still have it.
+    const weatherEvent: NormalizedEvent = { ...event, category: 'weather' as unknown as NormalizedEvent['category'] }
+    const repository = makeRepository({ getNormalizedEvent: vi.fn().mockResolvedValue(weatherEvent) })
+    const result = await generateBrief({ config, repository, provider }, weatherEvent.id)
     expect(result).toBeUndefined()
     expect(provider.generateBrief).not.toHaveBeenCalled()
   })

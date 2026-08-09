@@ -84,7 +84,20 @@ export class NwsConnector extends RssConnector {
       // GDACS, 'United States' below is a fact about this feed's scope, not
       // a guess about an individual item's geography.
       supportedCountries: ['US'],
-      supportedCategories: ['weather'],
+      // InsightWire is not a weather platform — NWS's feed is 100% routine
+      // weather (forecasts/statements/warnings), none of it a genuine
+      // natural disaster in its own right, so no honest non-empty value
+      // exists here now that 'weather' has been removed from CATEGORY_IDS.
+      // See `enabled: false` below, the real fix.
+      supportedCategories: [],
+      // Disabled, not deleted: the connector class, its severity-mapping
+      // logic, and its tests all stay intact (see
+      // docs/decisions/0014-remove-weather-keep-natural-disasters.md) in
+      // case a future product decision wants routine weather back — but
+      // ConnectorRegistry.listEnabled() (what ConnectorManager actually
+      // schedules) now skips it entirely, so it never collects or queues
+      // another item.
+      enabled: false,
     })
   }
 
@@ -112,7 +125,12 @@ export class NwsConnector extends RssConnector {
       description: String(entry.summary ?? '').trim(),
       country: 'United States',
       city: entry['cap:areaDesc'] ? String(entry['cap:areaDesc']) : undefined,
-      category: 'weather',
+      // Unreachable in practice (the connector is disabled above), kept
+      // only so this method still type-checks. 'natural_disasters' is the
+      // least-wrong placeholder — NWS content is never actually a natural
+      // disaster in its own right; there's no honest non-empty CategoryId
+      // for what this feed produces now that 'weather' no longer exists.
+      category: 'natural_disasters',
       source: this.name,
       sourceUrl,
       publishedAt,

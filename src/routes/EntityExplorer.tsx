@@ -61,7 +61,7 @@ function ActivityIndicator({ mentionCount }: { mentionCount: number | undefined 
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className={clsx('h-2.5 w-1 rounded-full', i < bars ? 'bg-sky-500 dark:bg-sky-400' : 'bg-slate-200 dark:bg-slate-700')}
+          className={clsx('h-2.5 w-1 rounded-full', i < bars ? 'bg-[var(--accent)] dark:bg-[var(--accent)]' : 'bg-slate-200 dark:bg-slate-700')}
         />
       ))}
     </div>
@@ -130,7 +130,7 @@ export default function EntityExplorer() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search people, organizations, countries, locations…"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:focus:border-sky-800 dark:focus:bg-slate-900 dark:focus:ring-sky-900"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[var(--accent)]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:focus:border-[var(--accent-hover)]/50 dark:focus:bg-slate-900 dark:focus:ring-[var(--accent-hover)]/15"
           />
         </div>
 
@@ -146,7 +146,7 @@ export default function EntityExplorer() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as EntitySortMode)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -160,7 +160,7 @@ export default function EntityExplorer() {
             <select
               value={activityWindow}
               onChange={(e) => setActivityWindow(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
               {ACTIVITY_WINDOWS.map((w) => (
                 <option key={w.id} value={w.id}>
@@ -326,7 +326,7 @@ function RecentlyActive({ entities }: { entities: EntityRecord[] }) {
             <li key={entity.id}>
               <Link
                 to={`/entities/${encodeURIComponent(entity.id)}`}
-                className="flex items-center gap-3 py-2.5 transition-colors hover:text-sky-600 dark:hover:text-sky-400"
+                className="flex items-center gap-3 py-2.5 transition-colors hover:text-[var(--accent-hover)] dark:hover:text-[var(--accent)]"
               >
                 <ActivityIndicator mentionCount={entity.mentionCount} />
                 <EntityNameDisplay name={entity.name} className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100" />
@@ -410,7 +410,7 @@ function EntityCardView({ entities }: { entities: EntityRecord[] }) {
           <Link
             key={entity.id}
             to={`/entities/${encodeURIComponent(entity.id)}`}
-            className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4 transition-colors hover:border-sky-300 dark:border-slate-800 dark:hover:border-sky-800"
+            className="flex flex-col gap-2 rounded-xl border border-slate-200 p-4 transition-colors hover:border-[var(--accent)]/40 dark:border-slate-800 dark:hover:border-[var(--accent-hover)]/50"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

@@ -136,7 +136,7 @@ export default function Calendar() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search events, people, institutions…"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
         </div>
 
@@ -176,7 +176,7 @@ export default function Calendar() {
               setCountries([])
               setSearch('')
             }}
-            className="self-start text-xs font-medium text-slate-500 hover:text-sky-500 dark:text-slate-400"
+            className="self-start text-xs font-medium text-slate-500 hover:text-[var(--accent)] dark:text-slate-400"
           >
             Clear filters
           </button>
@@ -254,13 +254,13 @@ export default function Calendar() {
                     className={clsx(
                       'flex min-h-[86px] flex-col items-start gap-1 bg-white p-1.5 text-left transition-colors dark:bg-slate-900',
                       !inMonth && 'opacity-40',
-                      isSelected && 'ring-2 ring-inset ring-sky-400',
+                      isSelected && 'ring-2 ring-inset ring-[var(--accent)]',
                     )}
                   >
                     <span
                       className={clsx(
                         'flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium',
-                        isToday ? 'bg-sky-500 text-white' : 'text-slate-500 dark:text-slate-400',
+                        isToday ? 'bg-[var(--accent)] text-[var(--accent-foreground)]' : 'text-slate-500 dark:text-slate-400',
                       )}
                     >
                       {day.getDate()}
@@ -343,7 +343,7 @@ export default function Calendar() {
                               target="_blank"
                               rel="noreferrer"
                               onClick={(ev) => ev.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline dark:text-sky-400"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent-hover)] hover:underline dark:text-[var(--accent)]"
                             >
                               View official source
                               <ExternalLink className="h-3 w-3" aria-hidden />

@@ -44,6 +44,14 @@ describe('createDefaultTrustRegistry', () => {
       'zimbabwe-zbc',
       'sanews',
       'sanews-features',
+      'south-africa-gov-events',
+      'south-africa-presidency-events',
+      'us-federal-reserve',
+      'us-white-house',
+      'uk-government',
+      'bank-of-england',
+      'eu-commission',
+      'ecb',
     ]
     for (const id of ids) {
       const profile = registry.getProfile(id)

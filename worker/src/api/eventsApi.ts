@@ -161,6 +161,12 @@ export async function listEvents(config: EventsApiConfig, query: ListEventsQuery
   // own query always does).
   if (query.statuses?.length) q = q.in('status', query.statuses)
   else q = q.neq('status', 'scheduled')
+  // InsightWire is not a weather platform — unconditional, regardless of any
+  // caller-supplied `categories` filter (a hand-crafted `?category=weather`
+  // can never resurface it). Historical weather rows are never deleted, just
+  // never returned by any Journalist-facing query (see
+  // docs/decisions/0014-remove-weather-keep-natural-disasters.md).
+  q = q.neq('category', 'weather')
   if (query.verifiedOnly) q = q.eq('verification_status', 'verified')
   if (query.liveOnly) q = q.eq('status', 'live')
   if (query.futureOnly) q = q.gt('start_time', new Date().toISOString())
@@ -201,13 +207,23 @@ export interface EventDetail {
 
 export async function getEventDetail(config: EventsApiConfig, repository: Repository, id: string): Promise<EventDetail | undefined> {
   const event = await repository.getNormalizedEvent(id)
-  if (!event) return undefined
+  // `Repository` (the ingestion pipeline's own interface) intentionally has
+  // no category filtering — that's not its job, and Phase 7 required its
+  // interface stay unchanged. The exclusion belongs here, at the read-API
+  // boundary: a stale direct link to a weather event 404s the same as a
+  // link to a genuinely missing event, rather than resolving. 'weather' is
+  // no longer a constructible CategoryId, but a real legacy DB row can
+  // still have it — hence the cast for this runtime check.
+  if (!event || (event.category as string) === 'weather') return undefined
 
   const timeline = await getTimeline(repository, id)
 
   const supabase = client(config)
   const { data, error } = await supabase
     .from('normalized_events')
+    // event.category can never be 'weather' here (checked above), so this
+    // same-category match can never surface a weather row either — no
+    // separate exclusion needed on this query.
     .select(SELECT_COLUMNS)
     .eq('category', event.category)
     .eq('country', event.country)

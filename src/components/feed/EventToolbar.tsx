@@ -35,7 +35,7 @@ export function EventToolbar({
           <button
             type="button"
             onClick={onClearFilters}
-            className="text-xs font-medium text-slate-500 hover:text-sky-500 dark:text-slate-400"
+            className="text-xs font-medium text-slate-500 hover:text-[var(--accent)] dark:text-slate-400"
           >
             Clear filters
           </button>
@@ -47,7 +47,7 @@ export function EventToolbar({
           id="feed-sort"
           value={sort}
           onChange={(e) => onSortChange(e.target.value as EventSortMode)}
-          className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
         >
           {sortOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>

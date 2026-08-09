@@ -10,7 +10,7 @@ function makeEvent(): NormalizedEvent {
     description: 'A severe thunderstorm was located near Greensburg.',
     country: 'United States',
     city: 'Westmoreland, PA',
-    category: 'weather',
+    category: 'natural_disasters',
     source: 'NWS Active Alerts',
     publishedAt: '2026-08-07T20:52:00.000Z',
     updatedAt: '2026-08-07T20:52:00.000Z',

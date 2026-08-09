@@ -368,12 +368,22 @@ export class ConnectorManager {
    * synchronously. `runConnector`/`runAll`/`runDue` are unchanged and still
    * do the full synchronous pipeline, useful for local/admin "run now and
    * see the result immediately" use.
+   *
+   * `disabledIds` is what makes the Administration "Enable/Disable" source
+   * control genuinely functional rather than a decorative database flag:
+   * the connector registry's own `enabled` is a static TypeScript property
+   * (`ConnectorRegistry.listEnabled()`), which an admin action has no way to
+   * change at runtime. `worker.ts`'s `scheduled()` fetches the real
+   * `sources.enabled` column from Supabase and passes disabled ids here —
+   * this is the one place collection actually happens, so this is the one
+   * place that needs to honor it.
    */
   async collectDue(
     publish: (raw: RawEvent) => Promise<void>,
     now: Date = new Date(),
+    disabledIds: ReadonlySet<string> = new Set(),
   ): Promise<CollectionResult[]> {
-    const dueIds = this.getDueConnectorIds(now)
+    const dueIds = this.getDueConnectorIds(now).filter((id) => !disabledIds.has(id))
     const settled = await runWithConcurrency(dueIds, this.concurrency, (id) => this.collectOne(id, publish))
     return settled.map((outcome, index) =>
       outcome.status === 'fulfilled'

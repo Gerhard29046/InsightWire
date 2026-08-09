@@ -18,7 +18,7 @@ export function EmptyState({ variant, onRefresh, title, description }: EmptyStat
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="flex min-h-[40vh] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 p-12 text-center dark:border-slate-800 dark:bg-slate-900/40"
     >
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10 text-sky-500">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
         {isNotConfigured ? (
           <PlugZap className="h-6 w-6" aria-hidden />
         ) : (
@@ -37,7 +37,7 @@ export function EmptyState({ variant, onRefresh, title, description }: EmptyStat
         <button
           type="button"
           onClick={onRefresh}
-          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
         >
           <RefreshCw className="h-4 w-4" aria-hidden />
           Refresh

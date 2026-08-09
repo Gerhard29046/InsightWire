@@ -6,13 +6,25 @@
  * metadata locally and re-export the underlying types from here, so the
  * taxonomy itself is declared exactly once.
  */
+/**
+ * 'weather' was removed (not renamed at the DB level — see the
+ * natural_disasters migration's comment): InsightWire is not a weather
+ * platform, and routine weather (forecasts, thunderstorm/wind statements,
+ * ordinary NWS alerts) has no place in a journalist intelligence product.
+ * 'natural_disasters' replaces it for the narrower, genuinely newsworthy
+ * subset (major earthquake, tsunami, volcanic eruption, major cyclone,
+ * catastrophic flooding, major wildfire) — gated by GDACS's own real
+ * alertlevel severity classification, not a keyword heuristic (see
+ * gdacs.ts). The `categories` Postgres table keeps its old `weather` row
+ * for historical-row FK integrity; no existing data was deleted.
+ */
 export const CATEGORY_IDS = [
   'government',
   'business',
   'courts',
   'markets',
   'elections',
-  'weather',
+  'natural_disasters',
   'conflicts',
   'science',
 ] as const

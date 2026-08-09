@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { Radar } from 'lucide-react'
-import { navGroups } from '../../lib/navigation'
+import { CORE_NAV_ITEM_IDS, navGroups } from '../../lib/navigation'
+import { useSiteConfig } from '../../lib/useSiteConfig'
 
 interface SidebarProps {
   open: boolean
@@ -9,6 +10,21 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onNavigate }: SidebarProps) {
+  const { navigation } = useSiteConfig()
+  // Real propagation of Administration's Navigation setting — a group with
+  // every item hidden disappears entirely rather than showing an empty
+  // header. `visibleItems` unset/loading still shows everything (the site
+  // config provider's own real defaults), never an empty sidebar mid-fetch.
+  // Core items (see CORE_NAV_ITEM_IDS) are always shown regardless of what's
+  // stored — a single mis-toggled setting must never hide the app's primary
+  // pages app-wide.
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => CORE_NAV_ITEM_IDS.includes(item.id) || navigation.visibleItems.includes(item.id)),
+    }))
+    .filter((group) => group.items.length > 0)
+
   return (
     <aside
       className={clsx(
@@ -18,14 +34,14 @@ export function Sidebar({ open, onNavigate }: SidebarProps) {
       )}
     >
       <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-5 dark:border-slate-800">
-        <Radar className="h-6 w-6 text-sky-500" aria-hidden />
+        <Radar className="h-6 w-6 text-[var(--accent)]" aria-hidden />
         <span className="text-lg font-semibold tracking-tight">
           InsightWire
         </span>
       </div>
 
       <nav className="flex flex-col gap-6 overflow-y-auto px-3 py-6">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {group.label}
@@ -41,7 +57,7 @@ export function Sidebar({ open, onNavigate }: SidebarProps) {
                       clsx(
                         'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                         isActive
-                          ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400'
+                          ? 'bg-[var(--accent)]/10 text-[var(--accent-hover)] dark:text-[var(--accent)]'
                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white',
                       )
                     }
