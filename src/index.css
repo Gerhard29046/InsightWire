@@ -17,18 +17,46 @@ body {
 }
 
 /*
+ * Density. Tailwind v4 generates every spacing/sizing utility (p-*, m-*,
+ * gap-*, h-*, w-*, space-*, inset-*, size-*...) as a multiple of the
+ * `--spacing` primitive it defines at `:root` — so overriding it here, on
+ * the same `<html>` element `[data-density]` is set on (siteConfig.tsx),
+ * proportionally tightens card padding, list/row heights, gaps, and control
+ * spacing everywhere at once, with no per-component rewiring. Font sizes use
+ * a separate `--text-*` scale untouched by this, so text doesn't shrink —
+ * only the chrome around it does.
+ */
+:root[data-density="compact"] {
+  --spacing: 0.2rem;
+}
+
+/*
  * Data-encoding tokens (category identity + severity status).
  * Values come from the validated dataviz reference palette — fixed slot
  * order is the colorblind-safety mechanism, do not reorder or reassign
  * without re-running the palette validator.
  */
 :root {
+  /* The app's real, live accent tokens. Every accent-following control reads
+     these — never a hardcoded sky, indigo, etc. utility class — so
+     Administration's Appearance accent colour setting (siteConfig.tsx writes
+     these three custom properties at runtime) actually repaints the whole
+     app, not just one component. Muted/border-style subtlety is produced on
+     demand via Tailwind's opacity modifier on accent itself (e.g.
+     bg-[var(--accent)]/10), which color-mixes against whatever is actually
+     behind it — that adapts correctly to light/dark automatically, so no
+     separate light/dark tint tokens are needed. */
+  --accent: #0ea5e9;
+  --accent-hover: #0284c7;
+  --accent-foreground: #ffffff;
+
   --cat-government: #2a78d6;
   --cat-business: #eb6834;
   --cat-courts: #1baf7a;
   --cat-markets: #eda100;
   --cat-elections: #e87ba4;
-  --cat-weather: #008300;
+  --cat-weather: #008300; /* unused — kept only so nothing breaks if ever referenced; see --cat-natural-disasters, its replacement */
+  --cat-natural-disasters: #008300;
   --cat-conflicts: #4a3aa7;
   --cat-science: #e34948;
 
@@ -44,7 +72,8 @@ body {
   --cat-courts: #199e70;
   --cat-markets: #c98500;
   --cat-elections: #d55181;
-  --cat-weather: #008300;
+  --cat-weather: #008300; /* unused — kept only so nothing breaks if ever referenced; see --cat-natural-disasters, its replacement */
+  --cat-natural-disasters: #008300;
   --cat-conflicts: #9085e9;
   --cat-science: #e66767;
 

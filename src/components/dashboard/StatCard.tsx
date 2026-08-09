@@ -28,7 +28,7 @@ export function StatCard({ icon: Icon, label, value, delta, to }: StatCardProps)
   const content = (
     <>
       <div className="flex items-center justify-between">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
           <Icon className="h-5 w-5" aria-hidden />
         </span>
         {delta && (
@@ -64,7 +64,7 @@ export function StatCard({ icon: Icon, label, value, delta, to }: StatCardProps)
     return (
       <Link
         to={to}
-        className="group block rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-sky-300 hover:bg-sky-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-800 dark:hover:bg-sky-950/30"
+        className="group block rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--accent)]/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-[var(--accent-hover)]/50 dark:hover:bg-[var(--accent-hover)]/30"
       >
         {content}
       </Link>

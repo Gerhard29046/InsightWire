@@ -8,7 +8,7 @@ function makeEvent(): NormalizedEvent {
     title: 'Storm approaches coast',
     description: 'A tropical storm is approaching the coastline.',
     country: 'Global',
-    category: 'weather',
+    category: 'natural_disasters',
     source: 'NASA News',
     publishedAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',

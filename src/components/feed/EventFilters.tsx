@@ -19,7 +19,7 @@ const chipBase = 'rounded-full border px-2.5 py-1 text-xs font-medium transition
 const chipInactive =
   'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300'
 const chipActiveNeutral =
-  'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300'
+  'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent-hover)] dark:border-[var(--accent-hover)]/50 dark:bg-[var(--accent-hover)]/15 dark:text-[var(--accent)]'
 
 export function EventFilters({ filters, onChange }: EventFiltersProps) {
   const set = <K extends keyof EventFiltersState>(key: K, value: EventFiltersState[K]) =>
@@ -38,7 +38,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
           value={filters.search}
           onChange={(e) => set('search', e.target.value)}
           placeholder="Search headlines, entities, tags…"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
         />
       </div>
 
@@ -150,7 +150,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="date"
             value={filters.dateFrom ?? ''}
             onChange={(e) => set('dateFrom', e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -162,7 +162,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="date"
             value={filters.dateTo ?? ''}
             onChange={(e) => set('dateTo', e.target.value || null)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-700 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           />
         </div>
       </div>
@@ -176,7 +176,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             id="feed-time-range"
             value={filters.timeRange}
             onChange={(e) => set('timeRange', e.target.value as EventTimeRange)}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             {timeRangeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -191,7 +191,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="checkbox"
             checked={filters.verifiedOnly}
             onChange={(e) => set('verifiedOnly', e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
+            className="h-3.5 w-3.5 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
           />
           Verified only
         </label>
@@ -200,7 +200,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="checkbox"
             checked={filters.liveOnly}
             onChange={(e) => set('liveOnly', e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
+            className="h-3.5 w-3.5 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
           />
           Live events
         </label>
@@ -209,7 +209,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="checkbox"
             checked={filters.futureOnly}
             onChange={(e) => set('futureOnly', e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
+            className="h-3.5 w-3.5 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
           />
           Future events
         </label>
@@ -218,7 +218,7 @@ export function EventFilters({ filters, onChange }: EventFiltersProps) {
             type="checkbox"
             checked={filters.breakingOnly}
             onChange={(e) => set('breakingOnly', e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400"
+            className="h-3.5 w-3.5 rounded border-slate-300 text-[var(--accent)] focus:ring-[var(--accent)]"
           />
           Breaking only
         </label>

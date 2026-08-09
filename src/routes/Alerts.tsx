@@ -92,7 +92,7 @@ export default function Alerts() {
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900">
-          <Bell className="h-4 w-4 text-sky-500" aria-hidden />
+          <Bell className="h-4 w-4 text-[var(--accent)]" aria-hidden />
           <span className="text-sm font-semibold text-slate-900 dark:text-white">{totalAlerts}</span>
           <span className="text-xs text-slate-500 dark:text-slate-400">active</span>
           {newAlerts > 0 && (
@@ -118,7 +118,7 @@ export default function Alerts() {
               className={clsx(
                 'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
                 active
-                  ? 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                  ? 'border-[var(--accent)]/40 bg-[var(--accent)]/5 text-[var(--accent-hover)] dark:border-[var(--accent-hover)]/50 dark:bg-[var(--accent-hover)]/15 dark:text-[var(--accent)]'
                   : 'border-slate-200 text-slate-400 hover:border-slate-300 dark:border-slate-800 dark:text-slate-500',
               )}
             >

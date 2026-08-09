@@ -77,7 +77,7 @@ export const CATEGORY_IMPACT_DEFAULTS: Record<CategoryId, CategoryImpactDefaults
   courts: { political: 0.5, economic: 0.3, geographic: 0.3 },
   markets: { political: 0.3, economic: 0.9, geographic: 0.5 },
   elections: { political: 0.9, economic: 0.3, geographic: 0.6 },
-  weather: { political: 0.1, economic: 0.5, geographic: 0.9 },
+  natural_disasters: { political: 0.1, economic: 0.5, geographic: 0.9 },
   conflicts: { political: 0.9, economic: 0.4, geographic: 0.8 },
   science: { political: 0.1, economic: 0.3, geographic: 0.3 },
 }
@@ -85,7 +85,7 @@ export const CATEGORY_IMPACT_DEFAULTS: Record<CategoryId, CategoryImpactDefaults
 /** A fixed editorial bias, independent of any single event's impact scores — how much a category generally warrants attention. */
 export const CATEGORY_BASE_WEIGHT: Record<CategoryId, number> = {
   conflicts: 1.0,
-  weather: 0.9,
+  natural_disasters: 0.9,
   elections: 0.85,
   government: 0.7,
   markets: 0.7,
@@ -112,9 +112,9 @@ function computeConfirmingSourcesScore(confirmingSourceCount: number): number {
   return clamp01((confirmingSourceCount - 1) * CONFIRMING_SOURCE_STEP)
 }
 
-/** Only weather events carry a meaningful "disaster" reading today — everything else scores 0, not a guess. */
+/** Only natural_disasters events carry a meaningful "disaster" reading today — everything else scores 0, not a guess. */
 function computeDisasterSeverity(event: NormalizedEvent): number {
-  return event.category === 'weather' ? SEVERITY_TO_SCORE[event.importance] : 0
+  return event.category === 'natural_disasters' ? SEVERITY_TO_SCORE[event.importance] : 0
 }
 
 export interface AiImpactScores {

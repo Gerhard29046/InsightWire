@@ -5,7 +5,7 @@ import type { ConfidenceLevel, EditorialPriority, GovernmentStatementNature, Jou
 const priorityMeta: Record<EditorialPriority, { label: string; className: string }> = {
   breaking: { label: 'Breaking', className: 'bg-red-500/10 text-red-600 dark:text-red-400' },
   emerging: { label: 'Emerging', className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-  significant: { label: 'Significant', className: 'bg-sky-500/10 text-sky-600 dark:text-sky-400' },
+  significant: { label: 'Significant', className: 'bg-[var(--accent)]/10 text-[var(--accent-hover)] dark:text-[var(--accent)]' },
   monitor: { label: 'Monitor', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-300' },
   background: { label: 'Background', className: 'bg-slate-500/10 text-slate-500 dark:text-slate-400' },
 }

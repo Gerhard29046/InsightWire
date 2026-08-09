@@ -85,26 +85,31 @@ export async function getDashboardSummary(
   const applyCountryFilter = <T>(q: T): T =>
     countries && countries.length > 0 ? ((q as any).in('country', countries) as T) : q
 
+  // InsightWire is not a weather platform — unconditional on every query,
+  // same reasoning/placement as the `status='scheduled'` exclusion right
+  // next to it (see docs/decisions/0014-remove-weather-keep-natural-disasters.md).
   const [tracked, highPriority, diversity, top] = await Promise.all([
     applyCountryFilter(
-      supabase.from('normalized_events').select('*', { count: 'exact', head: true }).neq('status', 'scheduled').gte('published_at', since),
+      supabase.from('normalized_events').select('*', { count: 'exact', head: true }).neq('status', 'scheduled').neq('category', 'weather').gte('published_at', since),
     ),
     applyCountryFilter(
       supabase
         .from('normalized_events')
         .select('*', { count: 'exact', head: true })
         .neq('status', 'scheduled')
+        .neq('category', 'weather')
         .gte('published_at', since)
         .gte('priority_score', BREAKING_PRIORITY_THRESHOLD),
     ),
     applyCountryFilter(
-      supabase.from('normalized_events').select('country, source, category').neq('status', 'scheduled').gte('published_at', since),
+      supabase.from('normalized_events').select('country, source, category').neq('status', 'scheduled').neq('category', 'weather').gte('published_at', since),
     ),
     applyCountryFilter(
       supabase
         .from('normalized_events')
         .select(SELECT_COLUMNS)
         .neq('status', 'scheduled')
+        .neq('category', 'weather')
         .gte('published_at', since)
         .order('priority_score', { ascending: false, nullsFirst: false })
         .limit(HIGHEST_SIGNAL_LIMIT),

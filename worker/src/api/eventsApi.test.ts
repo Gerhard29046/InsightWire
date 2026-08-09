@@ -49,7 +49,7 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}) {
     city: 'Austin',
     lat: null,
     lng: null,
-    category: 'weather',
+    category: 'natural_disasters',
     source: 'NWS Active Alerts',
     source_url: 'https://api.weather.gov/alerts/1',
     start_time: null,
@@ -88,7 +88,7 @@ describe('parseListEventsQuery', () => {
     params.set('future', 'true')
     params.set('live', 'true')
     params.append('country', 'United States')
-    params.append('category', 'weather')
+    params.append('category', 'natural_disasters')
 
     const query = parseListEventsQuery(params)
     expect(query).toMatchObject({
@@ -100,7 +100,7 @@ describe('parseListEventsQuery', () => {
       futureOnly: true,
       liveOnly: true,
       countries: ['United States'],
-      categories: ['weather'],
+      categories: ['natural_disasters'],
     })
   })
 
@@ -224,6 +224,21 @@ describe('listEvents', () => {
     expect(chain.order).toHaveBeenCalledWith('start_time', { ascending: true, nullsFirst: false })
   })
 
+  it('always excludes category=weather, regardless of any caller-supplied categories filter — InsightWire is not a weather platform', async () => {
+    const { client, chain } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+
+    await listEvents(config, {})
+    expect(chain.neq).toHaveBeenCalledWith('category', 'weather')
+
+    vi.clearAllMocks()
+    const { client: client2, chain: chain2 } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client2 as never)
+    // Even a hand-crafted request explicitly asking for weather still gets the unconditional exclusion applied.
+    await listEvents(config, { categories: ['weather'] })
+    expect(chain2.neq).toHaveBeenCalledWith('category', 'weather')
+  })
+
   it('does not apply any filter for region (documented no-op)', async () => {
     const { client, chain } = makeFakeClient({ data: [], error: null })
     vi.mocked(createClient).mockReturnValue(client as never)
@@ -256,7 +271,7 @@ describe('getEventDetail', () => {
     description: 'A description.',
     country: 'United States',
     city: 'Austin',
-    category: 'weather',
+    category: 'natural_disasters',
     source: 'NWS Active Alerts',
     publishedAt: '2026-08-07T14:32:00.000Z',
     updatedAt: '2026-08-07T14:48:00.000Z',
@@ -294,8 +309,22 @@ describe('getEventDetail', () => {
     expect(detail?.sources).toEqual(event.confirmingSources)
     expect(detail?.relatedEvents).toHaveLength(1)
     expect(detail?.relatedEvents[0].id).toBe('nws-alerts:ev-2')
-    expect(chain.eq).toHaveBeenCalledWith('category', 'weather')
+    expect(chain.eq).toHaveBeenCalledWith('category', 'natural_disasters')
     expect(chain.eq).toHaveBeenCalledWith('country', 'United States')
     expect(chain.neq).toHaveBeenCalledWith('id', event.id)
+  })
+
+  it('returns undefined for a weather-categorized event even when the repository has it — a stale link 404s rather than resolving', async () => {
+    const { client } = makeFakeClient({ data: [], error: null })
+    vi.mocked(createClient).mockReturnValue(client as never)
+    // 'weather' is no longer a constructible CategoryId in new code, but a
+    // real legacy DB row can still have it — hence the cast, simulating
+    // exactly that historical-data case.
+    const weatherEvent: NormalizedEvent = { ...event, category: 'weather' as unknown as NormalizedEvent['category'] }
+    const repository = makeRepository(weatherEvent)
+
+    const detail = await getEventDetail(config, repository, weatherEvent.id)
+    expect(detail).toBeUndefined()
+    expect(client.from).not.toHaveBeenCalled()
   })
 })

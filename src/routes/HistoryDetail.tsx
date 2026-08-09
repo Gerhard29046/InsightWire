@@ -128,7 +128,7 @@ export default function HistoryDetail() {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-sky-500 hover:text-sky-600 hover:underline"
+                  className="inline-flex items-center gap-1 text-sm text-[var(--accent)] hover:text-[var(--accent-hover)] hover:underline"
                 >
                   {url}
                   <ExternalLink className="h-3 w-3" aria-hidden />

@@ -9,6 +9,48 @@
       content="InsightWire — AI-powered newsroom intelligence platform for discovering emerging stories before they become mainstream news."
     />
     <title>InsightWire</title>
+    <script>
+      // Zero-flash theme/accent/density bootstrap — runs before any CSS or
+      // React code loads, so the very first paint already has the right
+      // dark class, accent colour, and density. Mirrors the exact same
+      // priority order as src/lib/theme.tsx and src/lib/siteConfig.tsx
+      // (personal override > site default > OS preference); those files
+      // take over from here on the very next render, using the same
+      // localStorage keys (see src/lib/themeBootstrap.ts) — this script
+      // can't import them since it runs before any bundle exists, so keep
+      // the key names and accent hex values in sync by hand if changed.
+      (function () {
+        try {
+          var ACCENTS = {
+            sky: { accent: '#0ea5e9', hover: '#0284c7', foreground: '#ffffff' },
+            indigo: { accent: '#6366f1', hover: '#4f46e5', foreground: '#ffffff' },
+            emerald: { accent: '#10b981', hover: '#059669', foreground: '#ffffff' },
+            amber: { accent: '#f59e0b', hover: '#d97706', foreground: '#0f172a' },
+            rose: { accent: '#f43f5e', hover: '#e11d48', foreground: '#ffffff' },
+          }
+          var override = localStorage.getItem('insightwire-theme-override')
+          var cached = null
+          try {
+            cached = JSON.parse(localStorage.getItem('insightwire-site-appearance') || 'null')
+          } catch (e) {}
+          var siteDefault = (cached && cached.defaultTheme) || 'system'
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          var isDark =
+            override === 'light' ? false :
+            override === 'dark' ? true :
+            siteDefault === 'light' ? false :
+            siteDefault === 'dark' ? true :
+            !!prefersDark
+          var root = document.documentElement
+          root.classList.toggle('dark', isDark)
+          var palette = ACCENTS[(cached && cached.accentColor) || 'sky'] || ACCENTS.sky
+          root.style.setProperty('--accent', palette.accent)
+          root.style.setProperty('--accent-hover', palette.hover)
+          root.style.setProperty('--accent-foreground', palette.foreground)
+          root.setAttribute('data-density', (cached && cached.density) || 'comfortable')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

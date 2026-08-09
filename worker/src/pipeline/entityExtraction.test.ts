@@ -294,6 +294,9 @@ describe('selectEventsNeedingExtraction', () => {
         select: vi.fn(function (this: unknown) {
           return this
         }),
+        neq: vi.fn(function (this: unknown) {
+          return this
+        }),
         order: vi.fn(function (this: unknown) {
           return this
         }),
@@ -333,6 +336,9 @@ describe('selectEventsNeedingExtraction', () => {
         select: vi.fn(function (this: unknown) {
           return this
         }),
+        neq: vi.fn(function (this: unknown) {
+          return this
+        }),
         order: vi.fn(function (this: unknown) {
           return this
         }),
@@ -366,6 +372,9 @@ describe('runEntityExtractionBatch', () => {
         select: vi.fn(function (this: unknown) {
           return this
         }),
+        neq: vi.fn(function (this: unknown) {
+          return this
+        }),
         order: vi.fn(function (this: unknown) {
           return this
         }),
@@ -388,6 +397,9 @@ describe('runEntityExtractionBatch', () => {
     const tables: Record<string, unknown> = {
       normalized_events: {
         select: vi.fn(function (this: unknown) {
+          return this
+        }),
+        neq: vi.fn(function (this: unknown) {
           return this
         }),
         order: vi.fn(function (this: unknown) {

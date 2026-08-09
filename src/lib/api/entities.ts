@@ -1,7 +1,19 @@
 import { apiFetch } from './client'
 import type { NormalizedEvent } from './types'
 
-/** Matches worker/src/pipeline/entityGraph.ts EntityType, minus the internal "event"/"topic" pseudo-types (never returned by /entities — see entitiesApi.ts). */
+/**
+ * Matches worker/src/pipeline/entityGraph.ts EntityType, minus the internal
+ * "event" pseudo-type (never returned by /entities — see entitiesApi.ts).
+ * `topic` IS included here (unlike an earlier version of this file) — it's
+ * a real, live entity type (tag-derived, populated by every ingested event
+ * via processMessage.ts's populateEntityGraph, zero AI dependency) that was
+ * previously excluded from the frontend entirely rather than just excluded
+ * from the *default* (`?type=` unset) view. `entitiesApi.ts`'s
+ * `DEFAULT_EXCLUDED_TYPE` only applies when no `types` filter is given, so
+ * explicitly requesting `type=topic` (e.g. the new "Topics" tab in
+ * `lib/entityTypes.ts`) already worked server-side — this was purely a
+ * missing frontend type/label, not a backend or schema change.
+ */
 export type EntityType =
   | 'person'
   | 'organization'
@@ -12,6 +24,7 @@ export type EntityType =
   | 'location'
   | 'political_party'
   | 'international_organization'
+  | 'topic'
   | 'other'
 
 export interface EntityRecord {

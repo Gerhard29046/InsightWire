@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
@@ -8,6 +7,7 @@ import { CategoryBadge } from '../dashboard/CategoryBadge'
 import { EventBadge } from './EventBadge'
 import { EventStatus } from './EventStatus'
 import { EventImportance } from './EventImportance'
+import { useBookmarkStatus } from '../../hooks/useBookmarkStatus'
 import type { NormalizedEvent, VerificationStatus } from '../../lib/api/types'
 
 const verificationMeta: Record<VerificationStatus, { label: string; icon: LucideIcon; className: string }> = {
@@ -26,7 +26,7 @@ function timeAgo(iso: string): string {
 }
 
 export function EventCard({ event, index = 0 }: { event: NormalizedEvent; index?: number }) {
-  const [bookmarked, setBookmarked] = useState(false)
+  const { bookmarked, toggle: toggleBookmark } = useBookmarkStatus(event.id)
   const navigate = useNavigate()
   const verification = verificationMeta[event.verificationStatus]
   const body = event.summary ?? event.description
@@ -59,7 +59,7 @@ export function EventCard({ event, index = 0 }: { event: NormalizedEvent; index?
       onKeyDown={(e) => {
         if (e.key === 'Enter') openDetail()
       }}
-      className="cursor-pointer rounded-xl border border-slate-200 p-4 transition-colors hover:border-sky-300 dark:border-slate-800 dark:hover:border-sky-800"
+      className="cursor-pointer rounded-xl border border-slate-200 p-4 transition-colors hover:border-[var(--accent)]/40 dark:border-slate-800 dark:hover:border-[var(--accent-hover)]/50"
     >
       <div className="flex flex-wrap items-center gap-2">
         <CategoryBadge category={event.category} />
@@ -92,7 +92,7 @@ export function EventCard({ event, index = 0 }: { event: NormalizedEvent; index?
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 hover:text-sky-500"
+            className="inline-flex items-center gap-1 hover:text-[var(--accent)]"
           >
             {event.source}
             <ExternalLink className="h-3 w-3" aria-hidden />
@@ -115,12 +115,12 @@ export function EventCard({ event, index = 0 }: { event: NormalizedEvent; index?
           type="button"
           onClick={(e) => {
             e.stopPropagation()
-            setBookmarked((b) => !b)
+            toggleBookmark()
           }}
           aria-pressed={bookmarked}
           className={clsx(
             'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800',
-            bookmarked ? 'text-sky-500' : 'text-slate-500 dark:text-slate-400',
+            bookmarked ? 'text-[var(--accent)]' : 'text-slate-500 dark:text-slate-400',
           )}
         >
           <Bookmark className="h-3.5 w-3.5" fill={bookmarked ? 'currentColor' : 'none'} aria-hidden />

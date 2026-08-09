@@ -57,7 +57,7 @@ export function EntityBriefPanel({ brief }: { brief: EntityBrief }) {
                 {fact.statement}{' '}
                 <Link
                   to={`/feed/${encodeURIComponent(fact.eventId)}`}
-                  className="inline-flex items-center gap-0.5 text-xs font-medium text-sky-500 hover:text-sky-600"
+                  className="inline-flex items-center gap-0.5 text-xs font-medium text-[var(--accent)] hover:text-[var(--accent-hover)]"
                 >
                   source <ExternalLink className="h-3 w-3" aria-hidden />
                 </Link>

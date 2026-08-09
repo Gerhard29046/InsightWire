@@ -51,7 +51,11 @@ export interface GenerateBriefDeps {
  */
 export async function generateBrief(deps: GenerateBriefDeps, normalizedEventId: string): Promise<JournalistBrief | undefined> {
   const event = await deps.repository.getNormalizedEvent(normalizedEventId)
-  if (!event) return undefined
+  // Same boundary as eventsApi.ts's getEventDetail: no AI brief should ever
+  // be generated for a routine weather event, even via a stale direct id.
+  // 'weather' is no longer a constructible CategoryId, but a real legacy
+  // DB row can still have it — hence the cast for this runtime check.
+  if (!event || (event.category as string) === 'weather') return undefined
 
   const timeline = await getTimeline(deps.repository, normalizedEventId)
   const provider =

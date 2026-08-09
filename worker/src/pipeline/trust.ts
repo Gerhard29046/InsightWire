@@ -101,5 +101,18 @@ export function createDefaultTrustRegistry(): TrustRegistry {
   registry.setProfile('sanews-features', { category: 'government' })
   registry.setProfile('south-africa-gov-events', { category: 'government' })
   registry.setProfile('south-africa-presidency-events', { category: 'government' })
+  // Added in the institutional-source-expansion phase (ADR 0016) — found
+  // missing here (silently falling back to UNKNOWN_CONNECTOR_CATEGORY,
+  // trust 0.6) while building Administration's source-reliability display,
+  // the exact same class of gap this file's own doc comment already warns
+  // about. Central banks/supranational executive bodies get 'official';
+  // elected/executive government bodies get 'government' — same tiering
+  // logic already applied to every other connector above.
+  registry.setProfile('us-federal-reserve', { category: 'official' })
+  registry.setProfile('us-white-house', { category: 'government' })
+  registry.setProfile('uk-government', { category: 'government' })
+  registry.setProfile('bank-of-england', { category: 'official' })
+  registry.setProfile('eu-commission', { category: 'official' })
+  registry.setProfile('ecb', { category: 'official' })
   return registry
 }

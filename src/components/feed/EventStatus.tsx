@@ -4,7 +4,7 @@ import type { EventStatusId } from '../../lib/api/types'
 const statusMeta: Record<EventStatusId, { label: string; dot: string; text: string }> = {
   live: { label: 'Live', dot: 'bg-red-500 animate-pulse', text: 'text-red-600 dark:text-red-400' },
   developing: { label: 'Developing', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400' },
-  scheduled: { label: 'Scheduled', dot: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400' },
+  scheduled: { label: 'Scheduled', dot: 'bg-[var(--accent)]', text: 'text-[var(--accent-hover)] dark:text-[var(--accent)]' },
   resolved: { label: 'Resolved', dot: 'bg-slate-400', text: 'text-slate-500 dark:text-slate-400' },
 }
 

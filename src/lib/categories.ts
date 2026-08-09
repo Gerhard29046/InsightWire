@@ -5,7 +5,7 @@ import {
   Gavel,
   TrendingUp,
   Vote,
-  CloudLightning,
+  Mountain,
   Swords,
   FlaskConical,
 } from 'lucide-react'
@@ -30,7 +30,13 @@ export const categories: CategoryMeta[] = [
   { id: 'courts', label: 'Courts', icon: Gavel, colorVar: '--cat-courts' },
   { id: 'markets', label: 'Markets', icon: TrendingUp, colorVar: '--cat-markets' },
   { id: 'elections', label: 'Elections', icon: Vote, colorVar: '--cat-elections' },
-  { id: 'weather', label: 'Weather & Disasters', icon: CloudLightning, colorVar: '--cat-weather' },
+  // Routine weather (forecasts, thunderstorm/wind statements, ordinary NWS
+  // alerts) was removed entirely — InsightWire is not a weather platform
+  // (see docs/decisions/0014-remove-weather-keep-natural-disasters.md).
+  // This is the narrower, genuinely newsworthy subset: major earthquake,
+  // tsunami, volcanic eruption, major cyclone, catastrophic flooding, major
+  // wildfire — gated server-side by GDACS's own real alertlevel severity.
+  { id: 'natural_disasters', label: 'Natural Disasters', icon: Mountain, colorVar: '--cat-natural-disasters' },
   { id: 'conflicts', label: 'Conflicts', icon: Swords, colorVar: '--cat-conflicts' },
   { id: 'science', label: 'Science', icon: FlaskConical, colorVar: '--cat-science' },
 ]

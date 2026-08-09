@@ -11,10 +11,11 @@ const fixtureXml = readFileSync(join(fixtureDir, 'nws.xml'), 'utf-8')
 describe('NwsConnector', () => {
   const connector = new NwsConnector()
 
-  it('is enabled, typed as rss, and scoped to the US', () => {
-    expect(connector.enabled).toBe(true)
+  it('is disabled (InsightWire is not a weather platform) but stays typed as rss and scoped to the US', () => {
+    expect(connector.enabled).toBe(false)
     expect(connector.type).toBe('rss')
     expect(connector.supportedCountries).toEqual(['US'])
+    expect(connector.supportedCategories).toEqual([])
   })
 
   it('parses the Atom fixture feed into raw events', () => {
@@ -39,7 +40,10 @@ describe('NwsConnector', () => {
 
     expect(event.id).toBe(`nws-alerts:${realRaw.externalId}`)
     expect(event.country).toBe('United States')
-    expect(event.category).toBe('weather')
+    // Unreachable in production (the connector is disabled), but normalize()
+    // must still type-check and behave deterministically for a hand-crafted
+    // test payload — see nws.ts's own comment on why this placeholder value was chosen.
+    expect(event.category).toBe('natural_disasters')
     expect(event.status).toBe('live')
     expect(event.verificationStatus).toBe('verified')
     expect(['low', 'medium', 'high', 'critical']).toContain(event.importance)

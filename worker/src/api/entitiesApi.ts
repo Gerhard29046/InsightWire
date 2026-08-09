@@ -121,7 +121,21 @@ const ACTIVE_SORT_CANDIDATE_POOL = 300
  */
 async function fetchMentionCounts(supabase: SupabaseClient, entityIds: string[]): Promise<Map<string, number>> {
   if (entityIds.length === 0) return new Map()
-  const results = await Promise.all(entityIds.map((id) => supabase.from('entity_event_links').select('*', { count: 'exact', head: true }).eq('entity_id', id)))
+  // InsightWire is not a weather platform — an entity whose only real
+  // mentions are routine weather events (e.g. a US state linked from
+  // hundreds of now-disabled NWS alerts) must not keep showing an inflated
+  // mention count or dominate "most active" sort. The join+exclusion is
+  // needed (not just disabling ingestion) because this counts *already-
+  // stored* links, which don't disappear on their own.
+  const results = await Promise.all(
+    entityIds.map((id) =>
+      supabase
+        .from('entity_event_links')
+        .select('*, normalized_events!inner(category)', { count: 'exact', head: true })
+        .eq('entity_id', id)
+        .neq('normalized_events.category', 'weather'),
+    ),
+  )
   const counts = new Map<string, number>()
   results.forEach((res, i) => {
     if (res.error) throw new Error(`fetchMentionCounts failed for entity ${entityIds[i]}: ${res.error.message}`)
@@ -295,13 +309,25 @@ export async function getEntityDetail(
   const eventsPageSize = opts.eventsPageSize ?? RECENT_EVENTS_PAGE_SIZE
   const eventsOffset = opts.eventsCursor ? Number(opts.eventsCursor) : 0
 
-  const mentionsBase = () => supabase.from('entity_event_links').select('*, normalized_events!inner(status)', { count: 'exact', head: true }).eq('entity_id', id).neq('normalized_events.status', 'scheduled')
+  // Every one of these 9 queries also excludes category='weather', same
+  // reasoning/placement as the status='scheduled' exclusion right next to
+  // each — InsightWire is not a weather platform, and an entity's stats/
+  // lists must not stay inflated by already-stored weather links (see
+  // docs/decisions/0014-remove-weather-keep-natural-disasters.md).
+  const mentionsBase = () =>
+    supabase
+      .from('entity_event_links')
+      .select('*, normalized_events!inner(status, category)', { count: 'exact', head: true })
+      .eq('entity_id', id)
+      .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
   const mentionsSince = (ms: number) =>
     supabase
       .from('entity_event_links')
-      .select('*, normalized_events!inner(status, published_at)', { count: 'exact', head: true })
+      .select('*, normalized_events!inner(status, published_at, category)', { count: 'exact', head: true })
       .eq('entity_id', id)
       .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .gte('normalized_events.published_at', isoSince(ms))
 
   const [total, last24h, last7d, last30d, breakdown, recent, cooccurrenceIds, breaking, upcoming] = await Promise.all([
@@ -311,22 +337,25 @@ export async function getEntityDetail(
     mentionsSince(30 * 24 * 60 * 60 * 1000),
     supabase
       .from('entity_event_links')
-      .select('normalized_events!inner(country, source, status)')
+      .select('normalized_events!inner(country, source, status, category)')
       .eq('entity_id', id)
       .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .limit(BREAKDOWN_ROW_LIMIT),
     supabase
       .from('entity_event_links')
       .select(`normalized_events!inner(${SELECT_COLUMNS}, status)`)
       .eq('entity_id', id)
       .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .order('published_at', { foreignTable: 'normalized_events', ascending: false })
       .range(eventsOffset, eventsOffset + eventsPageSize - 1),
     supabase
       .from('entity_event_links')
-      .select('event_id, normalized_events!inner(published_at, status)')
+      .select('event_id, normalized_events!inner(published_at, status, category)')
       .eq('entity_id', id)
       .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .order('published_at', { foreignTable: 'normalized_events', ascending: false })
       .limit(COOCCURRENCE_EVENT_WINDOW),
     supabase
@@ -334,6 +363,7 @@ export async function getEntityDetail(
       .select(`normalized_events!inner(${SELECT_COLUMNS}, status)`)
       .eq('entity_id', id)
       .neq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .gte('normalized_events.priority_score', BREAKING_PRIORITY_THRESHOLD)
       .order('priority_score', { foreignTable: 'normalized_events', ascending: false })
       .limit(BREAKING_EVENTS_LIMIT),
@@ -342,6 +372,7 @@ export async function getEntityDetail(
       .select(`normalized_events!inner(${SELECT_COLUMNS}, status)`)
       .eq('entity_id', id)
       .eq('normalized_events.status', 'scheduled')
+      .neq('normalized_events.category', 'weather')
       .order('start_time', { foreignTable: 'normalized_events', ascending: true })
       .limit(UPCOMING_EVENTS_LIMIT),
   ])
@@ -419,6 +450,9 @@ async function computeConnectedEntities(
   eventIds: string[],
   publishedAtByEventId: Map<string, string>,
 ): Promise<ConnectedEntity[]> {
+  // No separate category filter needed here: `eventIds` comes from the
+  // caller's `cooccurrenceIds` query, which already excludes weather — a
+  // weather-linked event can never appear in this list to begin with.
   if (eventIds.length === 0) return []
 
   const { data, error } = await supabase
@@ -495,7 +529,11 @@ async function fetchRelationshipEvidence(supabase: SupabaseClient, id: string): 
 
   const [otherEntities, evidenceEvents] = await Promise.all([
     supabase.from('entities').select('id, entity_type, name, country, first_seen_at, last_seen_at').in('id', otherEntityIds),
-    supabase.from('normalized_events').select('id, title, source_url, published_at').in('id', evidenceEventIds),
+    // Excluding weather here means a relationship whose only evidence is a
+    // weather event naturally drops out below (evidenceEvent lookup misses,
+    // and the final .filter() already discards rows with no evidence event)
+    // — no separate branch needed for "this relationship is weather-tainted."
+    supabase.from('normalized_events').select('id, title, source_url, published_at').neq('category', 'weather').in('id', evidenceEventIds),
   ])
   if (otherEntities.error) throw new Error(`fetchRelationshipEvidence(entities) failed: ${otherEntities.error.message}`)
   if (evidenceEvents.error) throw new Error(`fetchRelationshipEvidence(events) failed: ${evidenceEvents.error.message}`)

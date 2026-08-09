@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { User, Building2, Landmark, Factory, ShieldCheck, Globe2, MapPin, Flag, Users2, HelpCircle } from 'lucide-react'
+import { User, Building2, Landmark, Factory, ShieldCheck, Globe2, MapPin, Flag, Users2, Hash, HelpCircle } from 'lucide-react'
 import type { EntityType } from './api/entities'
 
 export interface EntityTypeMeta {
@@ -18,6 +18,11 @@ export const entityTypes: EntityTypeMeta[] = [
   { id: 'location', label: 'Location', icon: MapPin },
   { id: 'political_party', label: 'Political Party', icon: Users2 },
   { id: 'international_organization', label: 'International Org', icon: Globe2 },
+  // Real, tag-derived entities (see this array's own type doc comment in
+  // api/entities.ts) — excluded from the default "All" view (an existing,
+  // deliberate product decision: topics aren't the "who/what" a journalist
+  // is usually investigating) but now explorable via this explicit tab.
+  { id: 'topic', label: 'Topic', icon: Hash },
   { id: 'other', label: 'Other', icon: HelpCircle },
 ]
 
